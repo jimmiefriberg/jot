@@ -1,0 +1,178 @@
+.tree-view {
+  background: var(--color-background);
+}
+
+.tree {
+  padding: 12px 14px 30vh;
+  font-family: var(--font-editor);
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+}
+
+.tree-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 0 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: var(--radius-small);
+}
+
+.tree-row:hover {
+  background: var(--color-hover);
+}
+
+.tree-row.is-selected {
+  background: var(--color-accent-soft);
+}
+
+.tree-row.is-match {
+  background: color-mix(in srgb, var(--color-number) 16%, transparent);
+}
+
+.tree-row.is-active-match {
+  background: color-mix(in srgb, var(--color-number) 32%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-number);
+}
+
+.tree-children {
+  margin-left: calc(0.6em + 4px);
+  padding-left: 1.1em;
+  border-left: 1px solid var(--color-subtle-border);
+}
+
+.tree-toggle,
+.tree-toggle-spacer {
+  flex: none;
+  width: 1.3em;
+}
+
+.tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  height: 1em;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-muted-foreground);
+}
+
+.tree-toggle .icon.is-expanded {
+  transform: rotate(90deg);
+}
+
+.tree-toggle:hover {
+  background: none;
+  color: var(--color-foreground);
+}
+
+.tree-key {
+  color: var(--color-property);
+}
+
+.tree-index,
+.tree-summary {
+  color: var(--color-muted-foreground);
+}
+
+.tree-summary {
+  font-style: italic;
+}
+
+.tree-punctuation {
+  color: var(--color-punctuation);
+}
+
+.tree-tag {
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+.tree-string {
+  color: var(--color-string);
+}
+
+.tree-number {
+  color: var(--color-number);
+}
+
+.tree-boolean,
+.tree-null {
+  color: var(--color-keyword);
+}
+
+.tree-text {
+  color: var(--color-foreground);
+}
+
+.tree-comment {
+  color: var(--color-comment);
+  font-style: italic;
+}
+
+.tree-meta {
+  color: var(--color-accent);
+}
+
+.tree-problem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 12px 0;
+  padding: 7px 8px 7px 12px;
+  border-radius: var(--radius-large);
+  background: color-mix(in srgb, var(--color-number) 12%, transparent);
+  color: var(--color-foreground);
+  font-size: 12px;
+}
+
+.tree-problem button {
+  font-size: 12px;
+  padding: 2px 9px;
+}
+
+/* The selected node's path; click to copy it. */
+.tree-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 45%;
+  border: none;
+  background: var(--color-hover);
+  color: var(--color-muted-foreground);
+}
+
+.tree-path code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-editor);
+  font-size: 11.5px;
+  color: var(--color-foreground);
+}
+
+[data-edit-path] {
+  cursor: text;
+  border-radius: 3px;
+}
+
+[data-edit-path]:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.tree-inline-editor {
+  font: inherit;
+  color: var(--color-foreground);
+  background: var(--color-background);
+  border: none;
+  border-radius: var(--radius-small);
+  outline: 2px solid var(--color-accent);
+  padding: 0 3px;
+  margin: 0 1px;
+  min-width: 4ch;
+}

@@ -1,0 +1,145 @@
+/* CodeMirror additions that depend on settings (the base editor theme lives in editor-theme.ts). */
+
+/* Text width (Settings → Editor): a centred reading column in Plain view. */
+:root[data-text-width='limited'] .source-editor .cm-editor:not(.cm-live-preview) .cm-content {
+  max-width: var(--editor-maximum-width);
+  margin: 0 auto;
+}
+
+/* Typewriter scrolling: room above the first line so it can sit in the middle too. */
+.cm-typewriter .cm-content {
+  padding-top: 42vh;
+}
+
+/* Focus mode: everything but the current paragraph fades back. */
+.cm-focus-mode .cm-line {
+  transition: opacity 180ms ease;
+}
+
+.cm-focus-mode .cm-dimmed {
+  opacity: 0.3;
+}
+
+/* Invisible characters: subtle dots and arrows. */
+.cm-highlightSpace {
+  background-image: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--color-muted-foreground) 55%, transparent) 12%, transparent 13%);
+}
+
+.cm-highlightTab {
+  background-image: none;
+  position: relative;
+}
+
+.cm-highlightTab::before {
+  content: '→';
+  position: absolute;
+  left: 1px;
+  color: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
+  font-size: 0.85em;
+}
+
+/* Find / replace and go-to-line panels. */
+.cm-panels.cm-panels-top {
+  border-bottom: 1px solid var(--color-subtle-border);
+}
+
+.cm-panel.cm-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 36px 8px 12px;
+}
+
+.cm-panel.cm-search br {
+  flex-basis: 100%;
+  height: 0;
+  content: '';
+}
+
+.cm-panel.cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-muted-foreground);
+}
+
+.cm-panel.cm-search input[type='checkbox'] {
+  accent-color: var(--color-accent);
+}
+
+.cm-panel.cm-search .cm-textfield {
+  min-width: 220px;
+  height: 26px;
+}
+
+.cm-panel.cm-search .cm-button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.cm-panel.cm-search button[name='close'] {
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-small);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-muted-foreground);
+}
+
+.cm-panel.cm-search button[name='close']:hover {
+  background: var(--color-hover);
+  color: var(--color-foreground);
+}
+
+.cm-gotoLine {
+  padding: 8px 12px;
+}
+
+/* Fold markers in the gutter. */
+.cm-foldGutter .cm-gutterElement {
+  color: var(--color-muted-foreground);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.cm-gutters:hover .cm-foldGutter .cm-gutterElement {
+  opacity: 1;
+}
+
+/* Thin, rounded scrollbars that blend in with every theme. */
+.cm-scroller::-webkit-scrollbar,
+.formatted-view::-webkit-scrollbar,
+.sidebar-body::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar,
+.quick-open-results::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb,
+.formatted-view::-webkit-scrollbar-thumb,
+.sidebar-body::-webkit-scrollbar-thumb,
+.settings-content::-webkit-scrollbar-thumb,
+.quick-open-results::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--color-foreground) 18%, transparent);
+}
+
+.cm-scroller::-webkit-scrollbar-thumb:hover,
+.formatted-view::-webkit-scrollbar-thumb:hover,
+.sidebar-body::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-foreground) 32%, transparent);
+}
+
+.cm-scroller::-webkit-scrollbar-corner,
+.formatted-view::-webkit-scrollbar-corner {
+  background: transparent;
+}

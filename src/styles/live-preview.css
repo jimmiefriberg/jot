@@ -1,0 +1,218 @@
+/* Markdown live preview: the editor itself, styled as a document. */
+
+.cm-live-preview .cm-scroller {
+  font-family: var(--font-preview);
+}
+
+.cm-live-preview .cm-content {
+  flex: 0 1 760px;
+  margin: 0 auto;
+  padding: 28px 32px 40vh;
+  font-size: calc(var(--font-size) + 2px);
+}
+
+.cm-live-preview .cm-line {
+  padding: 0 2px;
+}
+
+/* Headings: the line class sets the size, so the syntax colouring must not scale it again. */
+.cm-live-preview .cm-lp-heading {
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-heading);
+}
+
+.cm-live-preview .cm-lp-heading * {
+  font-size: inherit;
+}
+
+.cm-live-preview .cm-lp-h1 {
+  font-size: 1.9em;
+  padding-top: 0.5em;
+}
+
+.cm-live-preview .cm-lp-h2 {
+  font-size: 1.45em;
+  padding-top: 0.45em;
+}
+
+.cm-live-preview .cm-lp-h3 {
+  font-size: 1.2em;
+  padding-top: 0.35em;
+}
+
+.cm-live-preview .cm-lp-h4,
+.cm-live-preview .cm-lp-h5,
+.cm-live-preview .cm-lp-h6 {
+  font-size: 1.05em;
+}
+
+.cm-lp-strong {
+  font-weight: 700;
+}
+
+.cm-lp-em {
+  font-style: italic;
+}
+
+.cm-lp-strike {
+  text-decoration: line-through;
+}
+
+.cm-live-preview .cm-lp-code {
+  font-family: var(--font-editor);
+  font-size: 0.88em;
+  background: var(--color-surface);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+
+.cm-live-preview .cm-lp-link {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 40%, transparent);
+  text-underline-offset: 2px;
+}
+
+.cm-live-preview .cm-lp-link * {
+  color: inherit;
+}
+
+.cm-lp-bullet {
+  display: inline-block;
+  width: 0.9em;
+  color: var(--color-muted-foreground);
+}
+
+.cm-lp-checkbox {
+  appearance: none;
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin: 0 0.4em 0 0;
+  vertical-align: -0.14em;
+  border: 1.5px solid color-mix(in srgb, var(--color-muted-foreground) 70%, transparent);
+  border-radius: 0.28em;
+  background: var(--color-background);
+  cursor: default;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.cm-lp-checkbox:hover {
+  border-color: var(--color-accent);
+}
+
+.cm-lp-checkbox:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+/* The tick, drawn with two borders. */
+.cm-lp-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 0.28em;
+  top: 0.1em;
+  width: 0.26em;
+  height: 0.5em;
+  border: solid var(--color-background);
+  border-width: 0 0.12em 0.12em 0;
+  transform: rotate(45deg);
+}
+
+.cm-live-preview .cm-lp-task-done {
+  color: var(--color-muted-foreground);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-muted-foreground) 60%, transparent);
+}
+
+.cm-live-preview .cm-lp-quote {
+  border-left: 3px solid var(--color-accent-strong);
+  padding-left: 16px;
+  color: var(--color-muted-foreground);
+}
+
+.cm-live-preview .cm-lp-codeblock {
+  font-family: var(--font-editor);
+  font-size: 0.86em;
+  background: var(--color-surface);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.cm-live-preview .cm-lp-fence {
+  color: var(--color-muted-foreground);
+  font-size: 0.75em;
+}
+
+/* Fence lines outside the cursor shrink to the code block's rounded edges. */
+.cm-live-preview .cm-lp-fence-hidden {
+  font-size: 0;
+  line-height: 0;
+  height: 10px;
+}
+
+.cm-live-preview .cm-lp-fence-open {
+  border-radius: 8px 8px 0 0;
+}
+
+.cm-live-preview .cm-lp-fence-close {
+  border-radius: 0 0 8px 8px;
+}
+
+.cm-live-preview .cm-lp-table-source {
+  font-family: var(--font-editor);
+  font-size: 0.88em;
+}
+
+.cm-lp-rule {
+  display: inline-block;
+  width: 100%;
+  vertical-align: middle;
+  border-top: 1px solid var(--color-border);
+}
+
+.cm-lp-image {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: 6px;
+  vertical-align: bottom;
+}
+
+.cm-lp-table {
+  padding: 6px 0;
+  overflow-x: auto;
+}
+
+.cm-lp-table table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+}
+
+.cm-lp-table th,
+.cm-lp-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 6px 14px;
+  text-align: left;
+}
+
+.cm-lp-table th + th,
+.cm-lp-table td + td {
+  border-left: 1px solid var(--color-border);
+}
+
+.cm-lp-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cm-lp-table th {
+  background: var(--color-surface);
+  font-weight: 600;
+}

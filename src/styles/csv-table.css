@@ -1,0 +1,148 @@
+.csv-view {
+  background: var(--color-background);
+  padding-bottom: 30vh;
+}
+
+.csv-keyboard-sink {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  resize: none;
+}
+
+.csv-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  /* Cells are mostly words and numbers, which read better in the writing font than in a code font. */
+  font-family: var(--font-preview);
+  font-size: var(--font-size);
+  line-height: calc(var(--line-height) * 0.9);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.csv-table th,
+.csv-table td {
+  padding: 6px 9px;
+  border-right: 1px solid var(--color-subtle-border);
+  border-bottom: 1px solid var(--color-subtle-border);
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.csv-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32px;
+}
+
+.csv-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-foreground) 3%, transparent);
+}
+
+/* Numbers line up on the right, with digits of equal width. */
+.csv-table td.is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.csv-letters-row th {
+  position: sticky;
+  top: 45px;
+  z-index: 2;
+  height: 24px;
+  padding: 2px 9px;
+  background: var(--color-surface);
+  color: var(--color-muted-foreground);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.csv-header-row th {
+  position: sticky;
+  top: 69px;
+  z-index: 1;
+  background: var(--color-background);
+  font-weight: 650;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 0 var(--color-border);
+}
+
+.csv-table .csv-row-number,
+.csv-table .csv-corner {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  color: var(--color-muted-foreground);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.csv-table .csv-corner {
+  z-index: 3;
+}
+
+.csv-header-row .csv-row-number {
+  z-index: 2;
+}
+
+.csv-table td.is-selected,
+.csv-table tbody tr:hover td.is-selected,
+.csv-header-row th.is-selected {
+  background: color-mix(in srgb, var(--color-selection) 70%, var(--color-background));
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.csv-letters-row th.is-selected,
+.csv-table .csv-row-number.is-selected {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+.csv-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.csv-resize-handle:hover {
+  background: linear-gradient(to right, transparent 2px, var(--color-accent) 2px, var(--color-accent) 4px, transparent 4px);
+}
+
+.csv-table td:has(.csv-cell-editor),
+.csv-table th:has(.csv-cell-editor) {
+  padding: 0;
+}
+
+.csv-cell-editor {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 5px 9px;
+  border: none;
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  resize: none;
+  overflow: hidden;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font: inherit;
+  line-height: inherit;
+}

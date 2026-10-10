@@ -1,0 +1,339 @@
+.settings-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-chrome);
+}
+
+/* Toolbar-style tabs, like the Settings windows of built-in Mac apps. */
+.settings-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--color-subtle-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.settings-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 76px;
+  padding: 6px 10px 5px;
+  border: none;
+  border-radius: var(--radius-large);
+  background: transparent;
+  color: var(--color-muted-foreground);
+  font-size: 11.5px;
+}
+
+.settings-tabs button.is-active {
+  background: var(--color-hover);
+  color: var(--color-accent);
+}
+
+.settings-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 28px 40px;
+}
+
+.setting-group {
+  max-width: 640px;
+  margin: 0 auto 24px;
+}
+
+.setting-group h2 {
+  margin: 0 0 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted-foreground);
+}
+
+.setting-group-rows {
+  border-radius: var(--radius-large);
+  background: var(--color-background);
+  box-shadow: var(--shadow-raised);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  padding: 8px 14px;
+}
+
+.setting-row + .setting-row {
+  border-top: 1px solid var(--color-subtle-border);
+}
+
+.setting-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-row-label {
+  font-size: 13px;
+}
+
+.setting-row-description {
+  font-size: 11.5px;
+  color: var(--color-muted-foreground);
+}
+
+.setting-row-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.number-input {
+  width: 72px;
+  text-align: right;
+}
+
+.font-picker {
+  display: grid;
+  grid-template-columns: 200px;
+  justify-items: end;
+  gap: 6px;
+}
+
+.font-picker select,
+.font-picker input {
+  width: 100%;
+}
+
+.font-picker-sample {
+  font-size: 13px;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+}
+
+/* Theme cards */
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.theme-card:hover:not(:disabled),
+.theme-card:active:not(:disabled) {
+  background: none;
+}
+
+.theme-swatch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 84px;
+  padding: 12px;
+  border: 1px solid;
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  box-shadow: var(--shadow-raised);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.theme-card:hover .theme-swatch {
+  transform: translateY(-1px);
+}
+
+.theme-card.is-selected .theme-swatch {
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--color-accent);
+}
+
+.theme-swatch-line {
+  display: block;
+  height: 6px;
+  width: 80%;
+  border-radius: 3px;
+}
+
+.theme-swatch-line.is-heading {
+  width: 50%;
+  height: 8px;
+}
+
+.theme-swatch-line.is-short {
+  width: 34%;
+}
+
+.theme-swatch-line.is-selection {
+  width: 44%;
+  height: 10px;
+  margin-top: -2px;
+}
+
+.theme-swatch-row {
+  display: flex;
+  gap: 6px;
+}
+
+.theme-swatch-accent {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.theme-card-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 2px;
+  font-size: 12px;
+  color: var(--color-foreground);
+}
+
+.theme-card-name .icon {
+  color: var(--color-accent);
+}
+
+/* Colour editor (inside a disclosure under the theme cards) */
+
+.theme-customize summary {
+  list-style: none;
+  cursor: default;
+}
+
+.theme-customize summary::-webkit-details-marker {
+  display: none;
+}
+
+.theme-customize summary h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-customize summary h2::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--transition-fast);
+}
+
+.theme-customize[open] summary h2::before {
+  transform: rotate(45deg);
+}
+
+.theme-editor {
+  padding: 14px;
+  border-radius: var(--radius-large);
+  background: var(--color-background);
+  box-shadow: var(--shadow-raised);
+}
+
+.theme-editor-header,
+.theme-editor-meta {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.theme-editor-meta label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.theme-editor-meta .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.theme-editor-header select {
+  min-width: 200px;
+}
+
+.settings-hint {
+  margin: 0 0 12px;
+  color: var(--color-muted-foreground);
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px 14px;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Swatches get an outline in both light and dark, so a colour close to the background still shows. */
+.color-field input[type='color'] {
+  flex: none;
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-small);
+  background: none;
+  box-shadow:
+    0 0 0 1px var(--color-border),
+    inset 0 0 0 1px rgb(127 127 127 / 0.35);
+}
+
+.color-field input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-field input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--radius-small);
+}
+
+.color-grid.is-read-only .color-field {
+  color: var(--color-muted-foreground);
+}
+
+.color-grid.is-read-only input[type='color'] {
+  pointer-events: none;
+}
+
+.theme-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid;
+  border-radius: var(--radius-large);
+  font-family: var(--font-editor);
+}
