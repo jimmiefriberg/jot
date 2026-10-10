@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Builds a signed and notarized Jot.app (plus a DMG to share) and checks that macOS accepts it.
+#
+# Reads the signing settings from ~/.jot-signing.env (or the file in $JOT_SIGNING_ENV), kept outside this repo:
+#
+#   export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+#   export APPLE_TEAM_ID="TEAMID"
+#   export APPLE_ID="you@example.com"
+#   export APPLE_PASSWORD="xxxx-xxxx-xxxx-xxxx"   # app-specific password from account.apple.com
+#
+# Usage: bun run app:release                                      (this Mac's architecture)
+#        bun run app:release -- --target universal-apple-darwin   (Apple silicon + Intel)
+set -euo pipefail
+
+signing_env_file="${JOT_SIGNING_ENV:-$HOME/.jot-signing.env}"
+repository_root="$(cd "$(dirname "$0")/.." && pwd)"
+
+fail() {
+  echo "error: $1" >&2
+  exit 1
+}
+
+[[ -f "$signing_env_file" ]] || fail "No signing settings at $signing_env_file. See the note at the top of this script."
+set -a
+# shellcheck source=/dev/null
+source "$signing_env_file"
+set +a
+
+for variable in APPLE_SIGNING_IDENTITY APPLE_TEAM_ID APPLE_ID APPLE_PASSWORD; do
+  [[ -n "${!variable:-}" ]] || fail "$variable isn't set in $signing_env_file."
+done
+
+# Signing needs the certificate (with its private key) in the Keychain, not just its name.
+installed_identities="$(security find-identity -v -p codesigning)"
+if ! grep -qF "\"$APPLE_SIGNING_IDENTITY\"" <<<"$installed_identities"; then
+  # The certificate is named after the team's account holder, which may not be the name you expect.
+  same_team_identity="$(sed -nE "s/.*\"(Developer ID Application: .*\($APPLE_TEAM_ID\))\"/\1/p" <<<"$installed_identities" | head -n 1)"
+  if [[ -n "$same_team_identity" ]]; then
+    fail "\"$APPLE_SIGNING_IDENTITY\" isn't in your Keychain, but this certificate for team $APPLE_TEAM_ID is:
+       \"$same_team_identity\"
+       Set APPLE_SIGNING_IDENTITY in $signing_env_file to that exact name."
+  fi
+  fail "\"$APPLE_SIGNING_IDENTITY\" isn't in your Keychain. Create it in Xcode → Settings → Accounts →
+       Manage Certificates → + → Developer ID Application (signed in to the account for team $APPLE_TEAM_ID)."
+fi
+
+# A --target build lands in its own folder under target/.
+target_directory="release"
+arguments=("$@")
+for index in "${!arguments[@]}"; do
+  if [[ "${arguments[$index]}" == "--target" ]]; then
+    target_directory="${arguments[$((index + 1))]}/release"
+  fi
+done
+
+echo "Signing as: $APPLE_SIGNING_IDENTITY"
+cd "$repository_root"
+bun run app:build -- --bundles app,dmg "$@"
+
+bundle_directory="$repository_root/src-tauri/target/$target_directory/bundle"
+app_path="$bundle_directory/macos/Jot.app"
+
+echo
+echo "Checking the signature, notarization and stapled ticket…"
+codesign --verify --deep --strict "$app_path"
+spctl --assess --type execute --verbose=2 "$app_path"
+xcrun stapler validate "$app_path"
+
+echo
+echo "Done. Install: cp -R \"$app_path\" /Applications/"
+echo "Share:   $(ls "$bundle_directory"/dmg/*.dmg)"

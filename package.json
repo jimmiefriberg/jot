@@ -10,7 +10,8 @@
     "test": "bun test src",
     "tauri": "tauri",
     "app:dev": "tauri dev",
-    "app:build": "tauri build"
+    "app:build": "tauri build",
+    "app:release": "./scripts/release-macos.sh"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

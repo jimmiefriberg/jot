@@ -29,7 +29,11 @@ cp -R "src-tauri/target/release/bundle/macos/Jot.app" /Applications/
 
 To make it the default app, select a `.md`/`.json`/`.csv`/`.txt` file in Finder, press ⌘I, choose **Jot** under "Open with" and click **Change All…**.
 
-The app isn't code-signed, so on first launch you'll need to right-click it and choose **Open**.
+That build isn't code-signed, so on first launch you'll need to right-click it and choose **Open**.
+
+### Signed release
+
+`bun run app:release` builds a signed and notarized `Jot.app` plus a DMG to share, then checks that macOS accepts it. It reads the signing settings from `~/.jot-signing.env` (kept out of the repo; see the top of `scripts/release-macos.sh` for the four variables) and needs the matching *Developer ID Application* certificate in your Keychain. Add `-- --target universal-apple-darwin` for a build that also runs on Intel Macs (after `rustup target add x86_64-apple-darwin`).
 
 Jot used to be called *Text Editor Plus*. On first launch it copies that version's settings, recent files and drafts into its own folder, but you'll need to choose Jot as the default app again (above) and can then delete the old app.
 
