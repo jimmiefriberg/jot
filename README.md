@@ -1,4 +1,4 @@
-# Text Editor Plus
+# Jot
 
 A fast, small TextEdit replacement for notes, to-do lists, quick config fixes and previewing data files.
 `.md`, `.json`/`.jsonc`, `.yaml`, `.xml` and `.csv` open **formatted** (live Markdown, collapsible trees, a CSV table). Press **⌘E** to switch to plain text, **⌘P** to find a file, **⌘,** for Settings (21 themes, fonts, writing modes).
@@ -24,12 +24,14 @@ bun run typecheck
 
 ```sh
 bun run app:build -- --bundles app
-cp -R "src-tauri/target/release/bundle/macos/Text Editor Plus.app" /Applications/
+cp -R "src-tauri/target/release/bundle/macos/Jot.app" /Applications/
 ```
 
-To make it the default app, select a `.md`/`.json`/`.csv`/`.txt` file in Finder, press ⌘I, choose **Text Editor Plus** under "Open with" and click **Change All…**.
+To make it the default app, select a `.md`/`.json`/`.csv`/`.txt` file in Finder, press ⌘I, choose **Jot** under "Open with" and click **Change All…**.
 
 The app isn't code-signed, so on first launch you'll need to right-click it and choose **Open**.
+
+Jot used to be called *Text Editor Plus*. On first launch it copies that version's settings, recent files and drafts into its own folder, but you'll need to choose Jot as the default app again (above) and can then delete the old app.
 
 ## Linux (later)
 

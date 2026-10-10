@@ -64,6 +64,12 @@ export function useCsvTable(isFirstRowHeader: boolean) {
     setSelection({ kind: 'cell', row: index, column });
   }
 
+  /** Adds an empty row after the last one. Returns its index. */
+  function appendRow(): number {
+    commit(insertRow(csv, rowCount));
+    return rowCount;
+  }
+
   function insertColumnNextToSelection(position: 'left' | 'right') {
     const range = getSelectedColumnRange(selection);
     const index = range ? (position === 'left' ? range.start : range.end + 1) : csv.columnCount;
@@ -132,6 +138,7 @@ export function useCsvTable(isFirstRowHeader: boolean) {
     moveSelectedRows,
     moveSelectedColumns,
     insertRowNextToSelection,
+    appendRow,
     insertColumnNextToSelection,
     deleteSelectedRows,
     deleteSelectedColumns,

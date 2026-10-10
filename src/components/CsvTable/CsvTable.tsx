@@ -264,6 +264,14 @@ export function CsvTable() {
     table.pasteText(event.clipboardData.getData('text/plain'));
   }
 
+  /** The "+" under the table: adds a row at the end and starts editing its first cell. */
+  function handleAddRow() {
+    const newRowIndex = table.appendRow();
+    setFilterQuery('');
+    setVisibleRowLimit((limit) => Math.max(limit, bodyRowCount + 1));
+    startEditing(newRowIndex, 0, '');
+  }
+
   function handleShowMoreRows() {
     setVisibleRowLimit((limit) => limit + ROWS_PAGE_SIZE);
   }
@@ -415,6 +423,12 @@ export function CsvTable() {
       {hiddenRowCount > 0 && (
         <button className="show-more-button" onClick={handleShowMoreRows}>
           Show {Math.min(hiddenRowCount, ROWS_PAGE_SIZE).toLocaleString()} more rows of {hiddenRowCount.toLocaleString()}
+        </button>
+      )}
+      {rowCount > 0 && hiddenRowCount === 0 && (
+        <button className="csv-add-row" style={{ width: tableWidth }} onClick={handleAddRow} title="Add a row at the end">
+          <Icon name="plus" size={14} />
+          Add row
         </button>
       )}
     </div>

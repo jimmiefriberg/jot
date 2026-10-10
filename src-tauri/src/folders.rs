@@ -131,7 +131,7 @@ mod tests {
     use super::*;
 
     fn temporary_directory(name: &str) -> PathBuf {
-        let directory = std::env::temp_dir().join(format!("text-editor-plus-folder-{name}-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!("jot-folder-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         directory

@@ -67,7 +67,7 @@ export const SAVE_CHOICE = { save: 'save', discard: 'discard', cancel: 'cancel' 
 export type SaveChoice = (typeof SAVE_CHOICE)[keyof typeof SAVE_CHOICE];
 
 const SETTINGS_WINDOW_LABEL = 'settings';
-const BROWSER_SETTINGS_KEY = 'text-editor-plus-settings';
+const BROWSER_SETTINGS_KEY = 'jot-settings';
 const IMAGE_PATH_HEADER = 'x-path';
 const isRunningInTauri = isTauri();
 

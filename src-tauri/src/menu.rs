@@ -43,7 +43,7 @@ fn build_recent_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Submenu<R>
 pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let item = |id: &str, text: &str, accelerator: Option<&str>| menu_item(app, id, text, accelerator);
 
-    let app_menu = SubmenuBuilder::new(app, "Text Editor Plus")
+    let app_menu = SubmenuBuilder::new(app, "Jot")
         .about(Some(AboutMetadata::default()))
         .separator()
         .item(&item("app.settings", "Settings…", Some("CmdOrCtrl+Comma"))?)
@@ -54,7 +54,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .hide_others()
         .show_all()
         .separator()
-        .item(&item("app.quit", "Quit Text Editor Plus", Some("CmdOrCtrl+Q"))?)
+        .item(&item("app.quit", "Quit Jot", Some("CmdOrCtrl+Q"))?)
         .build()?;
 
     let file_menu = SubmenuBuilder::new(app, "File")

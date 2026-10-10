@@ -1,6 +1,7 @@
 mod files;
 mod folders;
 mod menu;
+mod migration;
 mod recent;
 mod session;
 mod settings;
@@ -75,6 +76,7 @@ pub fn run() {
             windows::cancel_quit,
         ])
         .setup(|app| {
+            migration::migrate_previous_app_data(app.handle());
             recent::load_recent_items(app.handle());
             // Unsaved work from a crash comes back first, whatever else opens.
             windows::recover_drafts(app.handle(), session::load_drafts(app.handle()));
@@ -84,7 +86,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while building Text Editor Plus");
+        .expect("error while building Jot");
 
     app.run(|app, event| match event {
         RunEvent::Ready => {

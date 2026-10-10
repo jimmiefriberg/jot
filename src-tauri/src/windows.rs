@@ -88,6 +88,15 @@ fn window_showing_document(state: &RegistryState, path: &Path) -> Option<String>
         .map(|(label, _)| label.clone())
 }
 
+/// A window that shows `folder` in its sidebar without a document of its own.
+fn window_showing_only_folder(state: &RegistryState, folder: &Path) -> Option<String> {
+    state
+        .windows
+        .iter()
+        .find(|(_, entry)| entry.document_path.is_none() && entry.folder_path.as_deref() == Some(folder))
+        .map(|(label, _)| label.clone())
+}
+
 fn focus_window<R: Runtime>(app: &AppHandle<R>, label: &str) -> tauri::Result<()> {
     if let Some(window) = app.get_webview_window(label) {
         window.unminimize()?;
@@ -115,13 +124,13 @@ fn create_window<R: Runtime>(app: &AppHandle<R>, entry: WindowEntry) -> tauri::R
         .min_inner_size(360.0, 240.0)
         .visible(false);
     #[cfg(target_os = "macos")]
-    let builder = builder.tabbing_identifier("text-editor-plus-document");
+    let builder = builder.tabbing_identifier("jot-document");
 
     builder.build()?;
     Ok(())
 }
 
-/// Opens a window for a file, a folder, or nothing (untitled). A file that's already open focuses its window instead.
+/// Opens a window for a file, a folder, or nothing (untitled).
 pub fn open_document_window<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf>, folder: Option<PathBuf>) -> tauri::Result<()> {
     let path = path.map(|path| normalize_path(&path));
     let (document_path, folder_path) = match path {
@@ -129,10 +138,15 @@ pub fn open_document_window<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf
         other => (other, folder.map(|folder| normalize_path(&folder))),
     };
 
+    // A file that's already open, or a folder that's already open on its own, focuses that window instead.
     let existing_label = {
         let registry = app.state::<WindowRegistry>();
         let state = registry.state.lock().unwrap();
-        document_path.as_deref().and_then(|path| window_showing_document(&state, path))
+        match (document_path.as_deref(), folder_path.as_deref()) {
+            (Some(path), _) => window_showing_document(&state, path),
+            (None, Some(folder)) => window_showing_only_folder(&state, folder),
+            (None, None) => None,
+        }
     };
     if let Some(existing_label) = existing_label {
         return focus_window(app, &existing_label);

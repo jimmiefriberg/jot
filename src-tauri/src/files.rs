@@ -41,7 +41,7 @@ pub fn write_atomically(path: &Path, contents: &[u8]) -> Result<(), String> {
         .ok_or("Invalid file path")?
         .to_string_lossy()
         .into_owned();
-    let temporary_path = target_path.with_file_name(format!(".{file_name}.text-editor-plus-tmp"));
+    let temporary_path = target_path.with_file_name(format!(".{file_name}.jot-tmp"));
 
     let write_result = fs::File::create(&temporary_path).and_then(|mut file| {
         file.write_all(contents)?;
@@ -141,7 +141,7 @@ mod tests {
     use super::*;
 
     fn temporary_directory(name: &str) -> PathBuf {
-        let directory = std::env::temp_dir().join(format!("text-editor-plus-test-{name}-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!("jot-test-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         directory

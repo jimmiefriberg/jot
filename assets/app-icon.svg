@@ -39,12 +39,11 @@
   </g>
   <rect x="102" y="102" width="820" height="820" rx="183" fill="none" stroke="url(#rim)" stroke-width="4"/>
 
-  <!-- A typewriter slab-serif T: crossbar with drop serifs, monoline stem, wide foot -->
-  <g filter="url(#letter-shadow)" fill="#ffffff">
-    <rect x="290" y="296" width="444" height="70" rx="10"/>
-    <rect x="290" y="296" width="62" height="138" rx="10"/>
-    <rect x="672" y="296" width="62" height="138" rx="10"/>
-    <rect x="477" y="296" width="70" height="434" rx="10"/>
-    <rect x="378" y="668" width="268" height="62" rx="10"/>
+  <!-- A slab-serif lowercase j, drawn like the old typewriter T: a round dot (the "jot"), a top serif, a monoline stem and a hooked tail -->
+  <g filter="url(#letter-shadow)" fill="#ffffff" transform="translate(20 10)">
+    <circle cx="566" cy="262" r="47"/>
+    <rect x="426" y="364" width="175" height="62" rx="10"/>
+    <path d="M531 364 H601 V646 C601 742 547 790 452 790 H404 V722 H448 C509 722 531 699 531 640 Z"/>
+    <rect x="372" y="664" width="62" height="126" rx="10"/>
   </g>
 </svg>

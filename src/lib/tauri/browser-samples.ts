@@ -15,7 +15,7 @@ Jump to the [reading list](#reading-list).
 
 | Tool | Use |
 | --- | --- |
-| Text Editor Plus | Notes |
+| Jot | Notes |
 
 \`\`\`json
 { "hello": "world" }
@@ -32,7 +32,7 @@ Jump to the [reading list](#reading-list).
 `,
   json: `{
   // Comments are fine
-  "name": "text-editor-plus",
+  "name": "jot",
   "version": "0.1.0",
   "private": true,
   "keywords": ["editor", "markdown", "csv"],
@@ -65,7 +65,7 @@ jobs:
 `,
   xml: `<?xml version="1.0" encoding="UTF-8"?>
 <!-- Build settings -->
-<project name="text-editor-plus" version="0.1.0">
+<project name="jot" version="0.1.0">
   <dependency id="tauri" optional="false">Tauri 2</dependency>
 </project>
 `,

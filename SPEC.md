@@ -1,4 +1,4 @@
-# Text Editor Plus — Spec
+# Jot — Spec
 
 A fast, small TextEdit replacement for notes, to-do lists, quick config fixes and previewing data files. It is **not** an IDE: no projects, no LSP, no extensions.
 
@@ -69,7 +69,7 @@ Kept deliberately simple:
 - **Selection:** click a cell, click a row number to select a row, click a column letter to select a column. Shift-click extends a row or column selection.
 - **Move:** ⌥↑/⌥↓ moves the selected rows. ⌥←/⌥→ moves the selected columns. With only a cell selected, these move that cell's row or column.
 - **Edit:** double-click or ↩ to edit a cell. ↩ commits and ⎋ cancels. Arrow keys move between cells. ⌫ clears the selected cell(s).
-- **Insert:** ⌘↩ / ⇧⌘↩ inserts a row below/above. *Table* menu: insert column left/right, delete row(s)/column(s).
+- **Insert:** ⌘↩ / ⇧⌘↩ inserts a row below/above. The **+ Add row** button under the last row adds a row at the end and starts editing its first cell. *Table* menu: insert column left/right, delete row(s)/column(s).
 - **Copy/Cut/Paste:** copy puts the selected rows/columns/cell on the clipboard as delimited text. Paste into a cell sets its value.
 - **Sort:** select a column (or a cell in it), then use the toolbar's sort buttons or *Table → Sort by Column*. The header row stays put; numbers sort by value and empty cells go last. Undoable.
 - **Filter:** ⌘F (or *Table → Filter Rows…*) focuses the filter box; only rows with a matching cell are shown. ↩ jumps to the first match, ⎋ clears it.
@@ -116,7 +116,7 @@ Opened with ⌘, in its own window, with four tabs. Changes apply at once in thi
 - **Reopen windows:** files and folders open at quit come back at the next launch (unless the app was opened with a file, or it's turned off in Settings).
 - **Crash recovery:** unsaved changes are written to a draft a moment after you stop typing. If the app quits unexpectedly, the next launch reopens those windows with the changes in place (unsaved, so you choose whether to keep them).
 - Opening a file that's already open focuses its window.
-- Open via Finder (file associations, "Open With"), drag-and-drop onto a window, or CLI arguments (Linux).
+- Open via Finder (file associations, "Open With"), drag-and-drop onto a window or onto the app icon in the Dock (files and folders), or CLI arguments (Linux). Folders are declared as an *alternate* type, so Finder keeps opening folders itself.
 - The title shows the file name, plus "— Edited" when there are unsaved changes.
 - Closing a dirty window asks Save / Don't Save / Cancel. Quit (⌘Q) goes through the windows one at a time, bringing each to the front before it asks; Cancel stops the quit.
 - **External changes:** when a window gets focus, the file's modified time is checked. A clean document reloads silently. A dirty one asks before reloading. Saving checks again, and asks before replacing changes another app made since the file was opened.
