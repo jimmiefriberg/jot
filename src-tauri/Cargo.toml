@@ -1,6 +1,6 @@
 [package]
 name = "jot"
-version = "0.1.0"
+version = "0.1.1"
 description = "A fast, small text editor for notes, Markdown, JSON and CSV"
 edition = "2021"
 
