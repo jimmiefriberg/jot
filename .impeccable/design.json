@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-10T16:47:39.421Z",
+  "title": "Design System: Jot",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Page",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1f2328",
+        "tonalRamp": [
+          "oklch(15.0% 0.011 254.0)",
+          "oklch(26.4% 0.011 254.0)",
+          "oklch(37.9% 0.011 254.0)",
+          "oklch(49.3% 0.011 254.0)",
+          "oklch(60.7% 0.011 254.0)",
+          "oklch(72.1% 0.011 254.0)",
+          "oklch(83.6% 0.011 254.0)",
+          "oklch(95.0% 0.011 254.0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#6e7781",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 251.0)",
+          "oklch(26.4% 0.019 251.0)",
+          "oklch(37.9% 0.019 251.0)",
+          "oklch(49.3% 0.019 251.0)",
+          "oklch(60.7% 0.019 251.0)",
+          "oklch(72.1% 0.019 251.0)",
+          "oklch(83.6% 0.019 251.0)",
+          "oklch(95.0% 0.019 251.0)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#f5f6f8",
+        "tonalRamp": [
+          "oklch(15.0% 0.003 264.5)",
+          "oklch(26.4% 0.003 264.5)",
+          "oklch(37.9% 0.003 264.5)",
+          "oklch(49.3% 0.003 264.5)",
+          "oklch(60.7% 0.003 264.5)",
+          "oklch(72.1% 0.003 264.5)",
+          "oklch(83.6% 0.003 264.5)",
+          "oklch(95.0% 0.003 264.5)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#e4e7eb",
+        "tonalRamp": [
+          "oklch(15.0% 0.006 255.5)",
+          "oklch(26.4% 0.006 255.5)",
+          "oklch(37.9% 0.006 255.5)",
+          "oklch(49.3% 0.006 255.5)",
+          "oklch(60.7% 0.006 255.5)",
+          "oklch(72.1% 0.006 255.5)",
+          "oklch(83.6% 0.006 255.5)",
+          "oklch(95.0% 0.006 255.5)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Theme Accent",
+        "canonical": "#2f6fde",
+        "tonalRamp": [
+          "oklch(15.0% 0.182 260.6)",
+          "oklch(26.4% 0.182 260.6)",
+          "oklch(37.9% 0.182 260.6)",
+          "oklch(49.3% 0.182 260.6)",
+          "oklch(60.7% 0.182 260.6)",
+          "oklch(72.1% 0.182 260.6)",
+          "oklch(83.6% 0.182 260.6)",
+          "oklch(95.0% 0.182 260.6)"
+        ]
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Selection",
+        "canonical": "#cfe0ff",
+        "tonalRamp": [
+          "oklch(15.0% 0.046 262.5)",
+          "oklch(26.4% 0.046 262.5)",
+          "oklch(37.9% 0.046 262.5)",
+          "oklch(49.3% 0.046 262.5)",
+          "oklch(60.7% 0.046 262.5)",
+          "oklch(72.1% 0.046 262.5)",
+          "oklch(83.6% 0.046 262.5)",
+          "oklch(95.0% 0.046 262.5)"
+        ]
+      },
+      "active-line": {
+        "role": "neutral",
+        "displayName": "Active Line",
+        "canonical": "#f6f8fb",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 258.3)",
+          "oklch(26.4% 0.005 258.3)",
+          "oklch(37.9% 0.005 258.3)",
+          "oklch(49.3% 0.005 258.3)",
+          "oklch(60.7% 0.005 258.3)",
+          "oklch(72.1% 0.005 258.3)",
+          "oklch(83.6% 0.005 258.3)",
+          "oklch(95.0% 0.005 258.3)"
+        ]
+      },
+      "cursor": {
+        "role": "primary",
+        "displayName": "Cursor",
+        "canonical": "#2f6fde",
+        "tonalRamp": [
+          "oklch(15.0% 0.182 260.6)",
+          "oklch(26.4% 0.182 260.6)",
+          "oklch(37.9% 0.182 260.6)",
+          "oklch(49.3% 0.182 260.6)",
+          "oklch(60.7% 0.182 260.6)",
+          "oklch(72.1% 0.182 260.6)",
+          "oklch(83.6% 0.182 260.6)",
+          "oklch(95.0% 0.182 260.6)"
+        ]
+      },
+      "gutter-background": {
+        "role": "neutral",
+        "displayName": "Gutter",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "gutter-foreground": {
+        "role": "neutral",
+        "displayName": "Line Numbers",
+        "canonical": "#b0b7c0",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 254.6)",
+          "oklch(26.4% 0.015 254.6)",
+          "oklch(37.9% 0.015 254.6)",
+          "oklch(49.3% 0.015 254.6)",
+          "oklch(60.7% 0.015 254.6)",
+          "oklch(72.1% 0.015 254.6)",
+          "oklch(83.6% 0.015 254.6)",
+          "oklch(95.0% 0.015 254.6)"
+        ]
+      },
+      "heading": {
+        "role": "neutral",
+        "displayName": "Heading",
+        "canonical": "#1f2328",
+        "tonalRamp": [
+          "oklch(15.0% 0.011 254.0)",
+          "oklch(26.4% 0.011 254.0)",
+          "oklch(37.9% 0.011 254.0)",
+          "oklch(49.3% 0.011 254.0)",
+          "oklch(60.7% 0.011 254.0)",
+          "oklch(72.1% 0.011 254.0)",
+          "oklch(83.6% 0.011 254.0)",
+          "oklch(95.0% 0.011 254.0)"
+        ]
+      },
+      "link": {
+        "role": "primary",
+        "displayName": "Link",
+        "canonical": "#2f6fde",
+        "tonalRamp": [
+          "oklch(15.0% 0.182 260.6)",
+          "oklch(26.4% 0.182 260.6)",
+          "oklch(37.9% 0.182 260.6)",
+          "oklch(49.3% 0.182 260.6)",
+          "oklch(60.7% 0.182 260.6)",
+          "oklch(72.1% 0.182 260.6)",
+          "oklch(83.6% 0.182 260.6)",
+          "oklch(95.0% 0.182 260.6)"
+        ]
+      },
+      "string": {
+        "role": "syntax",
+        "displayName": "Syntax String",
+        "canonical": "#0a7d4f",
+        "tonalRamp": [
+          "oklch(15.0% 0.118 158.6)",
+          "oklch(26.4% 0.118 158.6)",
+          "oklch(37.9% 0.118 158.6)",
+          "oklch(49.3% 0.118 158.6)",
+          "oklch(60.7% 0.118 158.6)",
+          "oklch(72.1% 0.118 158.6)",
+          "oklch(83.6% 0.118 158.6)",
+          "oklch(95.0% 0.118 158.6)"
+        ]
+      },
+      "number": {
+        "role": "syntax",
+        "displayName": "Syntax Number / Warning",
+        "canonical": "#b35900",
+        "tonalRamp": [
+          "oklch(15.0% 0.142 53.6)",
+          "oklch(26.4% 0.142 53.6)",
+          "oklch(37.9% 0.142 53.6)",
+          "oklch(49.3% 0.142 53.6)",
+          "oklch(60.7% 0.142 53.6)",
+          "oklch(72.1% 0.142 53.6)",
+          "oklch(83.6% 0.142 53.6)",
+          "oklch(95.0% 0.142 53.6)"
+        ]
+      },
+      "keyword": {
+        "role": "syntax",
+        "displayName": "Syntax Keyword",
+        "canonical": "#a626a4",
+        "tonalRamp": [
+          "oklch(15.0% 0.211 328.8)",
+          "oklch(26.4% 0.211 328.8)",
+          "oklch(37.9% 0.211 328.8)",
+          "oklch(49.3% 0.211 328.8)",
+          "oklch(60.7% 0.211 328.8)",
+          "oklch(72.1% 0.211 328.8)",
+          "oklch(83.6% 0.211 328.8)",
+          "oklch(95.0% 0.211 328.8)"
+        ]
+      },
+      "property": {
+        "role": "syntax",
+        "displayName": "Syntax Key",
+        "canonical": "#1d5fb8",
+        "tonalRamp": [
+          "oklch(15.0% 0.155 257.6)",
+          "oklch(26.4% 0.155 257.6)",
+          "oklch(37.9% 0.155 257.6)",
+          "oklch(49.3% 0.155 257.6)",
+          "oklch(60.7% 0.155 257.6)",
+          "oklch(72.1% 0.155 257.6)",
+          "oklch(83.6% 0.155 257.6)",
+          "oklch(95.0% 0.155 257.6)"
+        ]
+      },
+      "comment": {
+        "role": "syntax",
+        "displayName": "Syntax Comment",
+        "canonical": "#8a929b",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 251.2)",
+          "oklch(26.4% 0.016 251.2)",
+          "oklch(37.9% 0.016 251.2)",
+          "oklch(49.3% 0.016 251.2)",
+          "oklch(60.7% 0.016 251.2)",
+          "oklch(72.1% 0.016 251.2)",
+          "oklch(83.6% 0.016 251.2)",
+          "oklch(95.0% 0.016 251.2)"
+        ]
+      },
+      "punctuation": {
+        "role": "syntax",
+        "displayName": "Syntax Punctuation",
+        "canonical": "#6e7781",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 251.0)",
+          "oklch(26.4% 0.019 251.0)",
+          "oklch(37.9% 0.019 251.0)",
+          "oklch(49.3% 0.019 251.0)",
+          "oklch(60.7% 0.019 251.0)",
+          "oklch(72.1% 0.019 251.0)",
+          "oklch(83.6% 0.019 251.0)",
+          "oklch(95.0% 0.019 251.0)"
+        ]
+      },
+      "danger": {
+        "role": "danger",
+        "displayName": "Danger",
+        "canonical": "#d1242f",
+        "tonalRamp": [
+          "oklch(15.0% 0.206 24.6)",
+          "oklch(26.4% 0.206 24.6)",
+          "oklch(37.9% 0.206 24.6)",
+          "oklch(49.3% 0.206 24.6)",
+          "oklch(60.7% 0.206 24.6)",
+          "oklch(72.1% 0.206 24.6)",
+          "oklch(83.6% 0.206 24.6)",
+          "oklch(95.0% 0.206 24.6)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Markdown H1 in the writing font, ruled below."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Markdown H2 (ruled); H3 1.25em and H4 1em share the weight."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Markdown prose in the user-chosen writing font; scales with the font-size setting."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Plain view and code in the user-chosen editor font."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Chrome: sidebar rows, Settings labels, buttons. Fixed px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Status bar, descriptions, segmented controls; tabular numbers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "raised",
+        "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 0.5px rgb(0 0 0 / 0.06)",
+        "purpose": "Active segment and Settings group cards. Dark: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 0.5px rgb(255 255 255 / 0.06)."
+      },
+      {
+        "name": "popover",
+        "value": "0 18px 50px rgb(0 0 0 / 0.22), 0 4px 12px rgb(0 0 0 / 0.08), 0 0 0 1px var(--color-border)",
+        "purpose": "Quick Open over an 18% black backdrop. Dark: alphas 0.5 and 0.3."
+      },
+      {
+        "name": "knob",
+        "value": "0 1px 2px rgb(0 0 0 / 0.25)",
+        "purpose": "Switch knob only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-fast",
+        "value": "120ms ease",
+        "purpose": "Hover, pressed and focus colour changes on controls."
+      },
+      {
+        "name": "switch",
+        "value": "160ms ease",
+        "purpose": "Switch fill and knob slide."
+      },
+      {
+        "name": "popover-enter",
+        "value": "140ms ease; from opacity 0, translateY(-6px) scale(0.98)",
+        "purpose": "Quick Open panel entrance (backdrop fades in over 120ms)."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Quiet tinted button for toolbars, dialogs and Settings; never accent-filled.",
+      "html": "<button class=\"ds-button\">Expand All</button>",
+      "css": ".ds-button { font: 13px -apple-system, system-ui, sans-serif; color: var(--color-foreground); background: var(--color-control); border: 1px solid var(--color-subtle-border); border-radius: var(--radius-medium); padding: 3px 10px; transition: background-color 120ms ease; } .ds-button:hover { background: var(--color-hover); } .ds-button:active { background: var(--color-pressed); } .ds-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "Borderless 26px icon-only button for toolbars and the sidebar header.",
+      "html": "<button class=\"ds-icon-button\" aria-label=\"Refresh\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M13 8a5 5 0 1 1-1.5-3.5M13 3v2.5h-2.5\"/></svg></button>",
+      "css": ".ds-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: none; border-radius: var(--radius-medium); background: transparent; color: var(--color-muted-foreground); transition: background-color 120ms ease, color 120ms ease; } .ds-icon-button:hover { background: var(--color-hover); color: var(--color-foreground); } .ds-icon-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "Page-coloured field with an accent border and soft halo on focus.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Custom font name\">",
+      "css": ".ds-input { font: 13px -apple-system, system-ui, sans-serif; color: var(--color-foreground); background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--radius-medium); padding: 4px 8px; transition: border-color 120ms ease, box-shadow 120ms ease; } .ds-input::placeholder { color: var(--color-muted-foreground); opacity: 0.8; } .ds-input:focus-visible { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-soft); }"
+    },
+    {
+      "name": "Toolbar Search",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "Borderless filter field on the hover tint, used above trees and the CSV table.",
+      "html": "<label class=\"ds-search\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"7\" cy=\"7\" r=\"4.5\"/><path d=\"M10.5 10.5 14 14\" stroke-linecap=\"round\"/></svg><input placeholder=\"Filter\"><span class=\"ds-search-count\">3 of 12</span></label>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 6px; width: 300px; height: 28px; padding: 0 9px; border-radius: var(--radius-medium); background: var(--color-hover); color: var(--color-muted-foreground); transition: box-shadow 120ms ease; } .ds-search:focus-within { background: var(--color-background); box-shadow: 0 0 0 1px var(--color-accent), 0 0 0 4px var(--color-accent-soft); } .ds-search input { flex: 1; min-width: 0; border: none; background: none; padding: 0; font: 12.5px -apple-system, system-ui, sans-serif; color: var(--color-foreground); outline: none; } .ds-search-count { font-size: 11px; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-control",
+      "description": "Tinted track with a raised active segment: Formatted/Plain, Files/Outline, Settings choices.",
+      "html": "<div class=\"ds-segmented\"><button class=\"is-active\">Formatted</button><button>Plain</button></div>",
+      "css": ".ds-segmented { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-medium); background: var(--color-hover); } .ds-segmented button { border: none; border-radius: var(--radius-small); padding: 1px 10px; font: 11px -apple-system, system-ui, sans-serif; background: transparent; color: var(--color-muted-foreground); } .ds-segmented button:hover:not(.is-active) { color: var(--color-foreground); } .ds-segmented button.is-active { background: var(--color-background); color: var(--color-foreground); box-shadow: var(--shadow-raised); } .ds-segmented button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Switch",
+      "kind": "input",
+      "refersTo": "switch",
+      "description": "Yes/no setting: pressed-tint pill that fills with the accent when on.",
+      "html": "<input class=\"ds-switch\" type=\"checkbox\" checked aria-label=\"Word wrap\">",
+      "css": ".ds-switch { appearance: none; position: relative; width: 36px; height: 22px; margin: 0; border-radius: 999px; background: var(--color-pressed); transition: background-color 160ms ease; } .ds-switch::after { content: \"\"; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: transform 160ms ease; } .ds-switch:checked { background: var(--color-accent); } .ds-switch:checked::after { transform: translateX(14px); } .ds-switch:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Settings Group",
+      "kind": "card",
+      "refersTo": "setting-group",
+      "description": "Muted heading over a raised page-coloured card of rows split by soft rules.",
+      "html": "<section class=\"ds-group\"><h2>Editor</h2><div class=\"ds-group-rows\"><div class=\"ds-row\"><span>Line numbers</span><span class=\"ds-row-hint\">On</span></div><div class=\"ds-row\"><span>Tab size</span><span class=\"ds-row-hint\">2</span></div></div></section>",
+      "css": ".ds-group { max-width: 640px; font: 13px -apple-system, system-ui, sans-serif; color: var(--color-foreground); } .ds-group h2 { margin: 0 0 8px 4px; font-size: 12px; font-weight: 600; color: var(--color-muted-foreground); } .ds-group-rows { border-radius: var(--radius-large); background: var(--color-background); box-shadow: var(--shadow-raised); } .ds-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 8px 14px; } .ds-row + .ds-row { border-top: 1px solid var(--color-subtle-border); } .ds-row-hint { color: var(--color-muted-foreground); }"
+    },
+    {
+      "name": "Quick Open Result List",
+      "kind": "custom",
+      "refersTo": "list-row-active",
+      "description": "Fuzzy-match results; the active row is the one full accent fill in the app.",
+      "html": "<div class=\"ds-results\"><div class=\"ds-result is-active\"><span class=\"ds-result-name\"><mark>RE</mark>ADME.md</span><span class=\"ds-result-dir\">jot</span></div><div class=\"ds-result\"><span class=\"ds-result-name\"><mark>re</mark>search.md</span><span class=\"ds-result-dir\">jot/docs</span></div></div>",
+      "css": ".ds-results { width: 420px; padding: 6px; border-radius: var(--radius-extra-large); background: var(--color-background); box-shadow: var(--shadow-popover); font: 13px -apple-system, system-ui, sans-serif; color: var(--color-foreground); } .ds-result { display: flex; align-items: baseline; gap: 8px; padding: 6px 10px; border-radius: var(--radius-medium); } .ds-result:hover { background: var(--color-hover); } .ds-result-name { font-weight: 500; } .ds-result-name mark { background: none; color: var(--color-accent); font-weight: 700; } .ds-result-dir { font-size: 12px; color: var(--color-muted-foreground); } .ds-result.is-active, .ds-result.is-active:hover { background: var(--color-accent); color: var(--color-background); } .ds-result.is-active mark { color: inherit; text-decoration: underline; text-underline-offset: 2px; } .ds-result.is-active .ds-result-dir { color: color-mix(in srgb, var(--color-background) 75%, transparent); }"
+    },
+    {
+      "name": "Status Bar",
+      "kind": "nav",
+      "refersTo": "status-bar",
+      "description": "Signature 30px chrome strip: document kind menu, counts, line endings, toggles.",
+      "html": "<div class=\"ds-status\"><div class=\"ds-status-group\"><span class=\"ds-status-kind\">Markdown</span><span>Ln 12, Col 4</span><span>418 words</span></div><div class=\"ds-status-group\"><span class=\"ds-status-warning\">Not UTF-8</span><span>LF</span></div></div>",
+      "css": ".ds-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 560px; height: 30px; padding: 0 8px; border-top: 1px solid var(--color-subtle-border); background: var(--color-chrome); color: var(--color-muted-foreground); font: 11.5px -apple-system, system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-status-group { display: flex; align-items: center; gap: 12px; white-space: nowrap; } .ds-status-kind { padding: 2px 6px; border-radius: var(--radius-small); color: var(--color-foreground); font-weight: 500; } .ds-status-kind:hover { background: var(--color-hover); } .ds-status-warning { color: var(--color-number); font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clean Sheet",
+    "overview": "Jot is a sheet of paper with the app barely around it. The document fills the window and the chrome (a status bar, an optional sidebar and a toolbar over tree and table views) sits at the edges in small type and softly tinted greys. Nothing in the frame competes with the text, and when there's nothing to do the interface keeps quiet.\n\nColour belongs to the user, not to Jot. Every colour comes from the active theme: 21 built-in themes modelled on the most popular editor and terminal themes (Paper and Ink are the defaults, alongside GitHub, Tokyo Night, Catppuccin, Dracula, Nord, Solarized, Gruvbox, Rosé Pine and more), plus the user's own duplicates. So Jot's identity lives in **structure**: spacing, type sizes, corner radii, the flat-and-tonal depth model, and the way hover and selection states are *derived* from whatever theme is applied. A design that only looks right in Paper is broken.\n\nThe window content is platform-neutral. It renders the same on macOS and Linux and relies only on native menus, tabs and dialogs for platform behaviour.",
+    "keyCharacteristics": [
+      "Simple and clean. The document leads and the chrome is small, tinted and quiet.",
+      "Theme-driven. Components use theme roles only, and state colours are mixed from them.",
+      "Flat and tonal. Depth comes from tinted surfaces and 1px borders, and shadows are rare.",
+      "Three fonts with three jobs: the UI font for chrome, the editor font for code and plain text, the writing font for prose.",
+      "Controls are quiet and are moving toward roomier. Today they are compact (11–13px), and new work should give them more padding and larger hit targets."
+    ],
+    "rules": [
+      {
+        "name": "The Theme Owns Colour Rule",
+        "body": "Components never hard-code a hex value. They use `var(--color-*)` roles, so every one of the 21+ themes (and any custom theme) works without a special case.",
+        "section": "colors"
+      },
+      {
+        "name": "The Derived State Rule",
+        "body": "Hover, pressed, soft-accent and control fills are `color-mix()` blends of the theme's own foreground, accent and surface (hover 7%, pressed 12%, control 5%, accent-soft 16%, accent-strong 28%). Never pick a separate hover colour per theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Fonts Rule",
+        "body": "The UI font is only for chrome, the editor font is for code and plain text, and the writing font is for Markdown prose. Never put the UI font inside the document, or a document font in the chrome.",
+        "section": "typography"
+      },
+      {
+        "name": "The User Sizes the Document Rule",
+        "body": "Document type scales from the user's `--font-size` and `--line-height` settings (and per-window zoom). Chrome type stays fixed in px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Three Shadows Rule",
+        "body": "Raised for a selection or a grouped card, popover for something floating over the document, knob for the switch. Anything else is separated by tint and a 1px soft rule, never by a new shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** take every colour from a theme role (`var(--color-*)`), and derive state colours with `color-mix()` from foreground, accent and surface (The Derived State Rule).",
+      "**Do** check new UI in at least Paper, Ink and one strongly coloured theme (such as Dracula or Solarized). A theme is a first-class use case, not a skin.",
+      "**Do** keep the accent for focus, selection, active state and links. The Quick Open active row is the only place it's a full fill.",
+      "**Do** separate regions with tint (page → chrome → surface) and 1px soft rules.",
+      "**Do** follow *quiet but roomier* for forms and settings: fields and buttons at least 30px tall, large segmented buttons at least 28px, a 36×22px switch, and labels and descriptions at 12–13px. Toolbars and the status bar stay compact.",
+      "**Do** keep chrome type in fixed px (11–13px, tabular numbers for counts) and let document type follow the user's font size and zoom.",
+      "**Do** keep the window content the same on macOS and Linux. Use system font stacks and nothing that only exists on one platform."
+    ],
+    "donts": [
+      "**Don't** hard-code a hex colour in a component. The only fixed colours are danger, the white switch knob and the Markdown highlight yellow.",
+      "**Don't** add shadows beyond raised, popover and knob (The Three Shadows Rule).",
+      "**Don't** design for one theme. If it only works in Paper, it's broken.",
+      "**Don't** use the UI font inside the document, or a document font in the chrome (The Three Fonts Rule).",
+      "**Don't** fill buttons with the accent colour. Buttons are tinted and the accent marks state."
+    ]
+  }
+}
