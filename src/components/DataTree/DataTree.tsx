@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { useDocumentText } from '../../lib/documents/use-document-text';
 import { applyTextChange } from '../../lib/editor/editor-session';
-import { parseJsonTree } from '../../lib/json/json-tree';
+import { parseJsonLinesTree, parseJsonTree } from '../../lib/json/json-tree';
 import { createReplacement, encodeJsonKey, encodeJsonValue, encodeYamlScalar } from '../../lib/tree/tree-edits';
 import type { DataTreeNode, DataValueKind, TreeParseResult } from '../../lib/tree/tree-model';
 import { dataNodeSearchTexts, findKeyChain, formatDataPath } from '../../lib/tree/tree-search';
@@ -270,6 +270,11 @@ function DataTree({ parse, notation }: DataTreeProps) {
 /** JSON tree. Comments and trailing commas are allowed. */
 export function JsonTree() {
   return <DataTree parse={parseJsonTree} notation="json" />;
+}
+
+/** JSON Lines tree: one item per line. */
+export function JsonLinesTree() {
+  return <DataTree parse={parseJsonLinesTree} notation="json" />;
 }
 
 /** YAML tree. Several documents (`---`) show as a list. */

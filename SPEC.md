@@ -11,9 +11,12 @@ Stack and reasoning: see [docs/research.md](docs/research.md). **Tauri 2 (Rust) 
 | Text | `.txt`, `.text`, `.log`, unknown and untitled | none (plain only) | CodeMirror |
 | Markdown | `.md`, `.markdown`, `.mdown` | **Read-only preview**: markup is hidden; headings, emphasis, lists, quotes, code, links, images, tables and **clickable checkboxes** render in place. **Side by Side** shows Plain on the left and the preview on the right | CodeMirror with Markdown highlighting (headings larger, bold/italic styled) |
 | JSON | `.json`, `.jsonc`, `.json5`*, `.code-workspace` | Collapsible tree with type-coloured values, item counts, expand/collapse all. Comments and trailing commas allowed. **Double-click a value or key to edit it** | CodeMirror with JSON highlighting, code folding, **Format Document** |
+| JSON Lines | `.jsonl`, `.ndjson` | The JSON tree with one item per line (blank lines skipped; a broken line is reported with its line number). Double-click to edit | CodeMirror with JSON highlighting |
 | CSV | `.csv`, `.tsv` | Table: resizable columns, wrapped cell text with growing row height, sticky header | CodeMirror plain |
 | YAML | `.yml`, `.yaml` | Collapsible tree in YAML notation (typed, coloured values; `---` documents as a list). Double-click to edit values and keys | CodeMirror with YAML highlighting, folding, ⌘/ comments |
 | XML | `.xml`, `.plist`, `.svg`, `.xsd`, `.xsl(t)` | Collapsible element tree with attributes; text-only elements inline; missing/mismatched tags reported. Double-click to edit text and attribute values | CodeMirror with XML highlighting, folding, ⌘/ comments |
+| HTML | `.html`, `.htm` | **Preview** of the saved file (relative CSS, images and scripts load; it reloads on save). Sandboxed: scripts run, but the page can't read other files or reach the app. **Open in Browser** for anything the preview can't do | CodeMirror with HTML highlighting and folding |
+| PDF | `.pdf` | **Preview only** (macOS's own PDF view), plus **Open in Default App**. Never edited or saved; its bytes are never read as text | none |
 
 Any other text file (`.env`, `.toml`, `.ini`, `.sh`, no extension…) opens as plain text via File → Open ("All files"), drag-and-drop or Open With.
 
@@ -119,7 +122,7 @@ Not rendered: GitHub-only references like `@user` and `#123`. A diagram Mermaid 
 - Tables, math, diagrams and images always render. Code blocks show their language and a **Copy** button.
 - **Table columns** can be resized by dragging the edge of a header cell; double-click the edge to go back to automatic widths. Widths last while the window is open and aren't saved in the file.
 - **Tables (editing, in Plain or Side by Side):** Tab / ⇧Tab move to the next / previous cell (Tab in the last cell adds a row), and the columns are lined up as you go. The *Table* menu's insert row/column and delete row/column work on the table at the cursor. *Format Document* (⇧⌥F) lines up every table in the note.
-- ⌘-click opens links (web links in the browser, relative `.md` links in a new window, `#heading` links jump to that heading) and jumps between a footnote reference and its note.
+- A click follows links: web links open in the browser, `#heading` links jump to that heading, and relative links (`.md`, `.html`, `.pdf`, …) open that file in this window; ⌘-click opens it in a new tab, ⇧⌘-click in a new window, ⌥-click beside. A click also jumps between a footnote reference and its note. Dragging across a link selects it instead.
 - **Images:** pasting an image (a screenshot, say) saves it to an `images` folder next to the note and links it. Dropping image files on a note links them where they land (relative to the note).
 - **Outline:** *View → Show Outline* (⌥⌘O) or the status-bar list button shows the note's headings in the sidebar; click one to jump to it. The heading you're in is highlighted. Front matter is skipped.
 - ⌘B / ⌘I / ⌘K wrap the selection (or the word at the cursor) in bold, italic or a link.

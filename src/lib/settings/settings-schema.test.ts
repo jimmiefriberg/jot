@@ -7,7 +7,7 @@ test('falls back to defaults for missing or invalid values', () => {
   expect(settings.fontSize).toBe(40);
   expect(settings.appearance).toBe(DEFAULT_SETTINGS.appearance);
   expect(settings.tabSize).toBe(4);
-  expect(settings.defaultViewMode).toEqual({ markdown: 'formatted', json: 'formatted', csv: 'plain', yaml: 'formatted', xml: 'formatted' });
+  expect(settings.defaultViewMode).toEqual({ ...DEFAULT_SETTINGS.defaultViewMode, csv: 'plain' });
   expect(mergeSettings('garbage')).toEqual(DEFAULT_SETTINGS);
   expect(settings.sidebarSide).toBe('left');
   expect(mergeSettings({ sidebarSide: 'right' }).sidebarSide).toBe('right');

@@ -6,7 +6,9 @@ import { useFolderStore } from '../../folders/folder-store';
 import { extractOutline } from '../../markdown/outline';
 import { isExternalLink, renderMarkdown } from '../../markdown/render-markdown';
 import { hasUrlScheme, resolveRelativePath } from '../../markdown/resolve-path';
+import { openFileInThisWindow } from '../../documents/document-actions';
 import { localFileUrl, openExternalLink, openPaths } from '../../tauri/backend';
+import type { OpenPlacement } from '../../tauri/backend';
 import type { LivePreviewEnvironment } from './live-preview-decorations';
 
 function resolveImageSource(source: string): string {
@@ -44,8 +46,11 @@ function withScheme(url: string): string {
   return url;
 }
 
-/** Web and mail links open in the browser, `#heading` links jump within the note, and relative links open files in this app. */
-function openLink(rawUrl: string, view: EditorView): void {
+/**
+ * Web and mail links open in the browser, `#heading` links jump within the note, and relative links open the file
+ * in this window (or where `placement` says).
+ */
+function openLink(rawUrl: string, view: EditorView, placement: OpenPlacement | null): void {
   const { path } = useDocumentStore.getState();
   const url = withScheme(rawUrl);
   if (isExternalLink(url)) {
@@ -57,7 +62,9 @@ function openLink(rawUrl: string, view: EditorView): void {
     return;
   }
   if (hasUrlScheme(url) || !path) return;
-  void openPaths([resolveRelativePath(path, url)], useFolderStore.getState().folderPath);
+  const targetPath = resolveRelativePath(path, url);
+  if (placement) void openPaths([targetPath], useFolderStore.getState().folderPath, placement);
+  else void openFileInThisWindow(targetPath);
 }
 
 /** Connects the live preview to this window's document (for image paths and links). */

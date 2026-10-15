@@ -23,6 +23,9 @@ const ICON_BY_KIND: Record<FileKind, IconName> = {
   [FILE_KIND.csv]: 'table',
   [FILE_KIND.yaml]: 'code',
   [FILE_KIND.xml]: 'code',
+  [FILE_KIND.jsonLines]: 'braces',
+  [FILE_KIND.html]: 'code',
+  [FILE_KIND.pdf]: 'file',
 };
 
 function indentStyle(depth: number): CSSProperties {

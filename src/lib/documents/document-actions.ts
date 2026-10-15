@@ -20,6 +20,8 @@ import {
   markDocumentSaved,
   replaceDocumentText,
 } from '../editor/editor-session';
+import { ok } from '../result';
+import type { Result } from '../result';
 import { openFolder, renamedPath, revealInSidebar } from '../folders/folder-store';
 import { flushSettings, useSettingsStore } from '../settings/settings-store';
 import type { FileContents, PathRenamed } from '../tauri/backend';
@@ -50,6 +52,19 @@ export function setDocumentKind(kind: FileKind): void {
   useDocumentStore.setState({ kind, viewMode: defaultViewModeFor(kind) });
 }
 
+/** Reads a file to show. PDFs are only previewed, so their bytes are never read as text, just their modified time. */
+async function readDocumentFile(path: string): Promise<Result<FileContents>> {
+  if (detectFileKind(path) !== FILE_KIND.pdf) return readTextFile(path);
+  const modifiedTime = await getFileModifiedTime(path);
+  return ok({ contents: '', modifiedTime, hasInvalidUtf8: false });
+}
+
+/** Checked by path as well as kind, so showing a PDF as another kind still never saves over it. */
+function isPdfDocument(): boolean {
+  const { path, kind } = useDocumentStore.getState();
+  return kind === FILE_KIND.pdf || detectFileKind(path) === FILE_KIND.pdf;
+}
+
 /** Puts a freshly read file into the store. A new `documentId` makes the editor and views start over with it. */
 function showLoadedDocument(path: string, file: FileContents): void {
   useDocumentStore.setState((state) => ({
@@ -77,7 +92,7 @@ export async function loadInitialDocument(): Promise<void> {
   if (folderPath) openFolder(folderPath);
   if (startingText?.draftId) adoptRecoveredDraft(startingText.draftId);
 
-  const result = path ? await readTextFile(path) : null;
+  const result = path ? await readDocumentFile(path) : null;
   if (path && result?.isOk) {
     showLoadedDocument(path, result.value);
   } else {
@@ -106,7 +121,7 @@ export async function openFileInThisWindow(path: string): Promise<void> {
   if (path === useDocumentStore.getState().path) return;
   if (!(await askToSaveBeforeLeaving())) return;
 
-  const result = await readTextFile(path);
+  const result = await readDocumentFile(path);
   if (!result.isOk) {
     await showErrorMessage(`Couldn't open “${getFileName(path)}”`, result.error);
     return;
@@ -156,6 +171,8 @@ async function hasChangedOnDisk(path: string): Promise<boolean> {
 /** Saves to the current path, or asks for one if the document is untitled. Returns whether it was saved. */
 export async function saveDocument(): Promise<boolean> {
   const { path } = useDocumentStore.getState();
+  // A PDF is only previewed; writing its (empty) text would wipe the file.
+  if (isPdfDocument()) return true;
   if (!path) return saveDocumentAs();
   if ((await hasChangedOnDisk(path)) && !(await askToOverwriteChangedFile(getFileName(path)))) return false;
   return writeDocumentTo(path);
@@ -163,6 +180,7 @@ export async function saveDocument(): Promise<boolean> {
 
 export async function saveDocumentAs(): Promise<boolean> {
   const { path, kind } = useDocumentStore.getState();
+  if (isPdfDocument()) return false;
   const suggestedName = path ? getFileName(path) : 'Untitled.txt';
   const newPath = await pickSavePath(suggestedName);
   if (!newPath) return false;
@@ -186,7 +204,7 @@ export async function saveDocumentAs(): Promise<boolean> {
 }
 
 async function reloadFromDisk(path: string): Promise<void> {
-  const result = await readTextFile(path);
+  const result = await readDocumentFile(path);
   if (!result.isOk) {
     await showErrorMessage(`Couldn't reload “${getFileName(path)}”`, result.error);
     return;

@@ -5,6 +5,8 @@ use std::time::UNIX_EPOCH;
 
 use serde::Serialize;
 use tauri::ipc::{InvokeBody, Request};
+use tauri::AppHandle;
+use tauri_plugin_opener::OpenerExt;
 
 const IMAGE_PATH_HEADER: &str = "x-path";
 /// Bigger files would freeze the editor (and could run out of memory), so they aren't opened.
@@ -145,6 +147,19 @@ pub fn save_image(request: Request<'_>) -> Result<(), String> {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     write_atomically(&path, bytes)
+}
+
+/// Kinds the preview can hand on to their default app: HTML (usually a browser) and PDF.
+const DEFAULT_APP_EXTENSIONS: [&str; 3] = ["html", "htm", "pdf"];
+
+/// Opens an HTML or PDF file in its default app (a web browser for HTML).
+#[tauri::command]
+pub fn open_in_default_app(app: AppHandle, path: String) -> Result<(), String> {
+    let extension = Path::new(&path).extension().and_then(|extension| extension.to_str()).unwrap_or("").to_lowercase();
+    if !DEFAULT_APP_EXTENSIONS.contains(&extension.as_str()) {
+        return Err("Only HTML and PDF files open in another app from here.".into());
+    }
+    app.opener().open_path(path, None::<&str>).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]

@@ -64,6 +64,7 @@ pub fn run() {
             files::write_text_file,
             files::file_modified_time,
             files::save_image,
+            files::open_in_default_app,
             settings::load_settings,
             settings::save_settings,
             menu::get_menu_commands,

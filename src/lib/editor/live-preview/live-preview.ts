@@ -4,6 +4,7 @@ import type { Extension, Range } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin } from '@codemirror/view';
 import type { DecorationSet, ViewUpdate } from '@codemirror/view';
 
+import { placementForClick } from '../../tauri/backend';
 import { buildBlockDecorations, buildInlineDecorations, describeActiveBlocks, findRenderedBlocks } from './live-preview-decorations';
 import type { LivePreviewEnvironment, RenderedBlock } from './live-preview-decorations';
 
@@ -108,11 +109,18 @@ function jumpToFootnote(view: EditorView, label: string, isFromDefinition: boole
   view.focus();
 }
 
-/** ⌘-click (Ctrl-click on Linux) opens a link or jumps to a footnote; a plain click just places the cursor. */
+/**
+ * A click follows a link (⌘-click opens a file in a new tab, ⌥-click beside) or jumps to a footnote.
+ * Links rendered as HTML (in tables) are caught too, so they never load in place of the app.
+ */
 function createLinkClickHandler(environment: LivePreviewEnvironment) {
   return EditorView.domEventHandlers({
-    mousedown(event, view) {
-      if (!(event.metaKey || event.ctrlKey) || !(event.target instanceof Element)) return false;
+    click(event, view) {
+      if (!(event.target instanceof Element)) return false;
+      const anchorUrl = event.target.closest('a[href]')?.getAttribute('href');
+      if (anchorUrl) event.preventDefault();
+      // Dragging across a link selects its text instead of following it.
+      if (!view.state.selection.main.empty) return Boolean(anchorUrl);
       const footnote = event.target.closest<HTMLElement>('[data-footnote]')?.dataset.footnote;
       if (footnote) {
         event.preventDefault();
@@ -126,10 +134,10 @@ function createLinkClickHandler(environment: LivePreviewEnvironment) {
         jumpToFootnote(view, footnoteLabelText, true);
         return true;
       }
-      const url = event.target.closest<HTMLElement>('[data-url]')?.dataset.url;
+      const url = event.target.closest<HTMLElement>('[data-url]')?.dataset.url ?? anchorUrl;
       if (!url) return false;
       event.preventDefault();
-      environment.openLink(url, view);
+      environment.openLink(url, view, placementForClick(event));
       return true;
     },
   });

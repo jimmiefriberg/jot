@@ -4,6 +4,8 @@ import { Decoration } from '@codemirror/view';
 import type { EditorView } from '@codemirror/view';
 import type { SyntaxNode, Tree } from '@lezer/common';
 
+import type { OpenPlacement } from '../../tauri/backend';
+
 import { emojiForShortcode, findFrontMatter, readAlertKind } from '../../markdown/markdown-features';
 import {
   AlertTitleWidget,
@@ -26,8 +28,8 @@ export interface LivePreviewEnvironment {
   resolveImageSource: (source: string) => string;
   /** Renders a Markdown table to HTML. */
   renderTable: (markdown: string) => string;
-  /** Opens a link that was ⌘-clicked. */
-  openLink: (url: string, view: EditorView) => void;
+  /** Opens a clicked link: here (null), or in a new tab, window or pane. */
+  openLink: (url: string, view: EditorView, placement: OpenPlacement | null) => void;
 }
 
 export interface DocumentRange {

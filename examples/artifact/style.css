@@ -1,0 +1,5 @@
+body { font-family: -apple-system, system-ui, sans-serif; margin: 40px; color: #1f2328; background: #f6f8fa; }
+.cards { display: flex; gap: 16px; margin: 24px 0; }
+.card { background: #fff; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px 28px; font-size: 18px; }
+.card span { display: block; font-size: 36px; font-weight: 700; color: #2f6fde; }
+button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 1px solid #2f6fde; background: #2f6fde; color: #fff; }

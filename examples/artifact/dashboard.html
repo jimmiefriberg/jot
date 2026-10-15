@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Project dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Project dashboard</h1>
+  <p>A stand-in for an HTML artifact from Claude. The stylesheet next to it loads, and the script below runs.</p>
+  <div class="cards">
+    <div class="card"><span id="open">0</span> open tasks</div>
+    <div class="card"><span id="done">0</span> done</div>
+  </div>
+  <button id="add">Finish a task</button>
+  <script>
+    let open = 12, done = 30;
+    function render() {
+      document.getElementById('open').textContent = open;
+      document.getElementById('done').textContent = done;
+    }
+    document.getElementById('add').addEventListener('click', function finishTask() {
+      if (open > 0) { open--; done++; render(); }
+    });
+    render();
+  </script>
+</body>
+</html>

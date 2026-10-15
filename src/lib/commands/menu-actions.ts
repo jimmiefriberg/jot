@@ -95,6 +95,8 @@ export async function handleMenuAction(actionId: string): Promise<void> {
   }
 
   const { viewMode, kind } = useDocumentStore.getState();
+  // A PDF has no text to edit, search or format.
+  if (kind === FILE_KIND.pdf) return;
   const showsSeparateView = viewMode === VIEW_MODE.formatted && hasSeparateFormattedView(kind);
   if (!showsSeparateView) {
     runEditorCommand(actionId);

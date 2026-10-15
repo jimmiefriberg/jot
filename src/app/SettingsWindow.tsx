@@ -31,7 +31,7 @@ const TABS: { tab: SettingsTab; label: string; icon: IconName }[] = [
 ];
 
 const TAB_STORAGE_KEY = 'settings-tab';
-const FORMATTABLE_KINDS: FormattableKind[] = ['markdown', 'json', 'csv', 'yaml', 'xml'];
+const FORMATTABLE_KINDS: FormattableKind[] = ['markdown', 'json', 'jsonLines', 'csv', 'yaml', 'xml', 'html'];
 const LINE_WIDTH_OPTIONS = [0, 60, 72, 80, 100, 120];
 
 const PREVIEW_WIDTH_OPTIONS: { value: number; label: string }[] = [

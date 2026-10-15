@@ -18,6 +18,7 @@ import {
   toggleComment,
   undo,
 } from '@codemirror/commands';
+import { html } from '@codemirror/lang-html';
 import { json, jsonLanguage } from '@codemirror/lang-json';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -132,6 +133,8 @@ function languageExtension(kind: FileKind): Extension {
   if (kind === FILE_KIND.json) {
     return [contentAttributes, json(), jsonLanguage.data.of({ commentTokens: { line: '//' } }), foldGutter(), closeBrackets()];
   }
+  if (kind === FILE_KIND.jsonLines) return [contentAttributes, json(), closeBrackets()];
+  if (kind === FILE_KIND.html) return [contentAttributes, html(), foldGutter()];
   if (kind === FILE_KIND.yaml) return [contentAttributes, yaml(), foldGutter()];
   if (kind === FILE_KIND.xml) return [contentAttributes, xml(), foldGutter()];
   return contentAttributes;

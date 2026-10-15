@@ -466,6 +466,24 @@ export async function openExternalLink(url: string): Promise<void> {
   await openUrl(url);
 }
 
+/** Opens an HTML file in the browser, or a PDF in its default app. */
+export async function openInDefaultApp(path: string): Promise<Result<null>> {
+  if (!isRunningInTauri) {
+    window.open(path, '_blank', 'noopener');
+    return ok(null);
+  }
+  return invokeSafely<null>('open_in_default_app', { path });
+}
+
+/**
+ * Like `localFileUrl`, but keeps the folders as real `/` segments, so links inside the file (`style.css`, `images/a.png`)
+ * resolve next to it.
+ */
+export function localPageUrl(path: string): string {
+  if (!isRunningInTauri) return path;
+  return convertFileSrc('') + path.split('/').map(encodeURIComponent).join('/');
+}
+
 /** Turns a local file path into a URL the web view is allowed to load (for Markdown images). */
 export function localFileUrl(path: string): string {
   return isRunningInTauri ? convertFileSrc(path) : path;

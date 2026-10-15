@@ -2,15 +2,19 @@ export const FILE_KIND = {
   text: 'text',
   markdown: 'markdown',
   json: 'json',
+  jsonLines: 'jsonLines',
   csv: 'csv',
   yaml: 'yaml',
   xml: 'xml',
+  html: 'html',
+  /** Shown read-only; never read or written as text. */
+  pdf: 'pdf',
 } as const;
 
 export type FileKind = (typeof FILE_KIND)[keyof typeof FILE_KIND];
 
 /** Kinds that have a formatted (rendered) view in addition to the plain editor. */
-export type FormattableKind = Exclude<FileKind, typeof FILE_KIND.text>;
+export type FormattableKind = Exclude<FileKind, typeof FILE_KIND.text | typeof FILE_KIND.pdf>;
 
 export const VIEW_MODE = {
   formatted: 'formatted',
@@ -29,6 +33,8 @@ const KIND_BY_EXTENSION: Record<string, FileKind> = {
   jsonc: FILE_KIND.json,
   json5: FILE_KIND.json,
   'code-workspace': FILE_KIND.json,
+  jsonl: FILE_KIND.jsonLines,
+  ndjson: FILE_KIND.jsonLines,
   csv: FILE_KIND.csv,
   tsv: FILE_KIND.csv,
   yml: FILE_KIND.yaml,
@@ -39,15 +45,21 @@ const KIND_BY_EXTENSION: Record<string, FileKind> = {
   xsd: FILE_KIND.xml,
   xsl: FILE_KIND.xml,
   xslt: FILE_KIND.xml,
+  html: FILE_KIND.html,
+  htm: FILE_KIND.html,
+  pdf: FILE_KIND.pdf,
 };
 
 export const FILE_KIND_LABEL: Record<FileKind, string> = {
   text: 'Plain Text',
   markdown: 'Markdown',
   json: 'JSON',
+  jsonLines: 'JSON Lines',
   csv: 'CSV',
   yaml: 'YAML',
   xml: 'XML',
+  html: 'HTML',
+  pdf: 'PDF',
 };
 
 export const FILE_KINDS: FileKind[] = Object.values(FILE_KIND);
@@ -88,7 +100,7 @@ export function hasSeparateFormattedView(kind: FileKind): boolean {
 
 /** Whether a kind has a formatted (rendered) view in addition to the plain editor. */
 export function hasFormattedView(kind: FileKind): kind is FormattableKind {
-  return kind !== FILE_KIND.text;
+  return kind !== FILE_KIND.text && kind !== FILE_KIND.pdf;
 }
 
 /** Whether a kind can be shown in a view mode: plain text is only plain, and only Markdown has side by side. */

@@ -12,6 +12,9 @@ import { SIDEBAR_PANEL, hideSidebar, showSidebarPanel, useSidebarStore } from '.
 import { resetZoom, useWindowViewStore, useZoomedFontSize } from '../../lib/window/window-view-store';
 import { Icon } from '../Icon/Icon';
 
+// A text document can be shown as any kind except PDF, which needs the file's own bytes.
+const TEXT_KINDS = FILE_KINDS.filter((fileKind) => fileKind !== FILE_KIND.pdf);
+
 const WORD_COUNT_LIMIT = 2_000_000;
 
 function countWords(text: string): number {
@@ -103,7 +106,8 @@ export function StatusBar() {
   const isSidebarVisible = useSidebarStore((state) => state.isVisible);
   const sidebarPanel = useSidebarStore((state) => state.panel);
   const isPlain = viewMode === VIEW_MODE.plain;
-  const isEditorVisible = !useShowsSeparateFormattedView();
+  const isPdf = kind === FILE_KIND.pdf;
+  const isEditorVisible = !useShowsSeparateFormattedView() && !isPdf;
   const isMarkdown = kind === FILE_KIND.markdown;
   const isOutlineVisible = isSidebarVisible && sidebarPanel === SIDEBAR_PANEL.outline && isMarkdown;
   const isFilesVisible = isSidebarVisible && hasFolder && !isOutlineVisible;
@@ -121,17 +125,21 @@ export function StatusBar() {
             <Icon name="sidebar" size={14} />
           </button>
         )}
-        <label className="status-kind" title="Show this document as another kind">
-          {FILE_KIND_LABEL[kind]}
-          <select value={kind} onChange={handleKindChange} aria-label="Document kind">
-            {FILE_KINDS.map((fileKind) => (
-              <option key={fileKind} value={fileKind}>
-                {FILE_KIND_LABEL[fileKind]}
-              </option>
-            ))}
-          </select>
-          <Icon name="chevronDown" size={10} />
-        </label>
+        {isPdf ? (
+          <span>{FILE_KIND_LABEL[kind]}</span>
+        ) : (
+          <label className="status-kind" title="Show this document as another kind">
+            {FILE_KIND_LABEL[kind]}
+            <select value={kind} onChange={handleKindChange} aria-label="Document kind">
+              {TEXT_KINDS.map((fileKind) => (
+                <option key={fileKind} value={fileKind}>
+                  {FILE_KIND_LABEL[fileKind]}
+                </option>
+              ))}
+            </select>
+            <Icon name="chevronDown" size={10} />
+          </label>
+        )}
         {isEditorVisible && <CursorPosition />}
         {(kind === FILE_KIND.text || isMarkdown) && <WordCount />}
         {kind === FILE_KIND.csv && <TableSize />}
@@ -143,7 +151,7 @@ export function StatusBar() {
           </span>
         )}
         <ZoomBadge />
-        <span title="Line endings">{lineSeparator === '\r\n' ? 'CRLF' : 'LF'}</span>
+        {!isPdf && <span title="Line endings">{lineSeparator === '\r\n' ? 'CRLF' : 'LF'}</span>}
         {isMarkdown && (
           <button
             className={`status-icon-button${isOutlineVisible ? ' is-active' : ''}`}

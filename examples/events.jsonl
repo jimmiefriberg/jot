@@ -1,0 +1,6 @@
+{"time":"2026-10-15T08:00:00Z","level":"info","message":"Server started","port":8080}
+{"time":"2026-10-15T08:00:02Z","level":"info","message":"User signed in","user":{"id":42,"name":"Ada"}}
+{"time":"2026-10-15T08:01:13Z","level":"warn","message":"Slow query","durationMs":1840,"tags":["db","orders"]}
+
+{"time":"2026-10-15T08:02:40Z","level":"error","message":"Payment failed","retry":true,"attempts":3}
+{"time":"2026-10-15T08:03:00Z","level":"info","message":"Line with a mistake" "missing":"colon"}
