@@ -16,7 +16,7 @@ Stack and reasoning: see [docs/research.md](docs/research.md). **Tauri 2 (Rust) 
 | YAML | `.yml`, `.yaml` | Collapsible tree in YAML notation (typed, coloured values; `---` documents as a list). Double-click to edit values and keys | CodeMirror with YAML highlighting, folding, ⌘/ comments |
 | XML | `.xml`, `.plist`, `.svg`, `.xsd`, `.xsl(t)` | Collapsible element tree with attributes; text-only elements inline; missing/mismatched tags reported. Double-click to edit text and attribute values | CodeMirror with XML highlighting, folding, ⌘/ comments |
 | HTML | `.html`, `.htm` | **Preview** of the saved file (relative CSS, images and scripts load; it reloads on save). Sandboxed: scripts run, but the page can't read other files or reach the app. **Open in Browser** for anything the preview can't do | CodeMirror with HTML highlighting and folding |
-| PDF | `.pdf` | **Preview only** (macOS's own PDF view), plus **Open in Default App**. Never edited or saved; its bytes are never read as text | none |
+| PDF | `.pdf` | **Preview only**, drawn by pdf.js (loaded the first time a PDF opens): selectable text, working links, zoom in the toolbar or with ⌘+ / ⌘− / ⌘0 (fit) and trackpad pinch, plus **Open in Default App**. Never edited or saved | none |
 
 Any other text file (`.env`, `.toml`, `.ini`, `.sh`, no extension…) opens as plain text via File → Open ("All files"), drag-and-drop or Open With.
 

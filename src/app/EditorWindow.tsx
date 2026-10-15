@@ -7,6 +7,7 @@ import { useDocumentBootstrap, useShowWindowWhenReady, useWindowIntegration } fr
 import { CsvTable } from '../components/CsvTable/CsvTable';
 import { JsonLinesTree, JsonTree, YamlTree } from '../components/DataTree/DataTree';
 import { FilePreview } from '../components/FilePreview/FilePreview';
+import { PdfViewer } from '../components/PdfViewer/PdfViewer';
 import { PaneDivider } from '../components/PaneDivider/PaneDivider';
 import { QuickOpen } from '../components/QuickOpen/QuickOpen';
 import { SideBySidePreview } from '../components/SideBySidePreview/SideBySidePreview';
@@ -54,7 +55,7 @@ export function EditorWindow() {
       <div className="window-body">
         <main className="document-area" data-side-by-side={showsSideBySide || undefined}>
           <SourceEditor key={`editor-${documentId}`} initialText={initialText} isVisible={!showsSeparateView && !isPdf} />
-          {isPdf && <FilePreview key={`pdf-${documentId}`} />}
+          {isPdf && <PdfViewer key={`pdf-${documentId}`} />}
           {showsSeparateView && <FormattedView key={`view-${documentId}`} />}
           {showsSideBySide && isEditorReady && <SideBySidePreview key={`preview-${documentId}`} />}
         </main>

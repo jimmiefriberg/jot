@@ -532,3 +532,20 @@ kbd {
   /* Pages without a background of their own are drawn on white, as in a browser. */
   background: #fff;
 }
+
+.pdf-zoom-level {
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-pages-area {
+  position: relative;
+  flex: 1;
+}
+
+.pdf-pages {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--color-surface);
+}

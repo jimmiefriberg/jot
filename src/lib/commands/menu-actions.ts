@@ -88,6 +88,8 @@ function runInPlainView(actionId: string) {
 
 /** Routes a native menu action to the document, the active formatted view, or the plain editor. */
 export async function handleMenuAction(actionId: string): Promise<void> {
+  // The PDF view zooms its pages itself (⌘+ / ⌘−) instead of the whole window.
+  if (useDocumentStore.getState().kind === FILE_KIND.pdf && runViewCommand(actionId)) return;
   const documentCommand = DOCUMENT_COMMANDS[actionId];
   if (documentCommand) {
     await documentCommand();

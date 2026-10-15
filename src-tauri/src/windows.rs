@@ -249,11 +249,17 @@ pub fn open_settings_window<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()>
     Ok(())
 }
 
+/// Every extension Jot has a view for (the same list as `KIND_BY_EXTENSION` in file-kind.ts), plus plain-text ones.
+const OPENABLE_EXTENSIONS: [&str; 25] = [
+    "txt", "text", "log", "md", "markdown", "mdown", "json", "jsonc", "json5", "code-workspace", "jsonl", "ndjson", "csv", "tsv",
+    "yml", "yaml", "xml", "plist", "svg", "xsd", "xsl", "xslt", "html", "htm", "pdf",
+];
+
 pub fn show_open_dialog<R: Runtime>(app: &AppHandle<R>) {
     let app_handle = app.clone();
     app.dialog()
         .file()
-        .add_filter("Text documents", &["txt", "md", "markdown", "json", "jsonc", "csv", "tsv", "yml", "yaml", "xml", "log"])
+        .add_filter("Documents", &OPENABLE_EXTENSIONS)
         .add_filter("All files", &["*"])
         .pick_files(move |selected| {
             let Some(selected) = selected else { return };

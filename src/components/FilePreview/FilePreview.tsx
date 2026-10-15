@@ -1,4 +1,3 @@
-import { FILE_KIND } from '../../lib/documents/file-kind';
 import { useDocumentStore } from '../../lib/documents/document-store';
 import { localPageUrl, openInDefaultApp, showErrorMessage } from '../../lib/tauri/backend';
 
@@ -12,21 +11,19 @@ async function handleOpenInDefaultApp() {
   if (!result.isOk) await showErrorMessage("Couldn't open the file", result.error);
 }
 
-/** The saved file shown as a page: an HTML page (sandboxed) or a PDF. It reloads when the file is saved or changes on disk. */
+/** The saved HTML file shown as a (sandboxed) page. It reloads when the file is saved or changes on disk. */
 export function FilePreview() {
   const path = useDocumentStore((state) => state.path);
-  const kind = useDocumentStore((state) => state.kind);
   const modifiedTime = useDocumentStore((state) => state.modifiedTime);
   const isDirty = useDocumentStore((state) => state.isDirty);
-  const isHtml = kind === FILE_KIND.html;
 
   return (
     <div className="formatted-view file-preview">
       <div className="view-toolbar">
-        <span className="file-preview-note">{isHtml && isDirty ? 'Showing the last saved version. Save (⌘S) to update.' : ''}</span>
+        <span className="file-preview-note">{isDirty ? 'Showing the last saved version. Save (⌘S) to update.' : ''}</span>
         {path && (
           <div className="toolbar-group">
-            <button onClick={handleOpenInDefaultApp}>{isHtml ? 'Open in Browser' : 'Open in Default App'}</button>
+            <button onClick={handleOpenInDefaultApp}>Open in Browser</button>
           </div>
         )}
       </div>
@@ -36,7 +33,7 @@ export function FilePreview() {
           className="file-preview-frame"
           title="Preview"
           src={`${localPageUrl(path)}?modified=${modifiedTime ?? 0}`}
-          sandbox={isHtml ? HTML_SANDBOX : undefined}
+          sandbox={HTML_SANDBOX}
         />
       ) : (
         <p className="empty-state">Save this file to preview it.</p>
