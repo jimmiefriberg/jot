@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { FILE_KIND, VIEW_MODE, hasFormattedView, hasSeparateFormattedView } from './file-kind';
+import { FILE_KIND, VIEW_MODE, canShowViewMode, hasSeparateFormattedView } from './file-kind';
 import type { FileKind, ViewMode } from './file-kind';
 
 export interface CursorPosition {
@@ -54,12 +54,17 @@ export const useDocumentStore = create<DocumentState>(() => ({
 
 export function setViewMode(viewMode: ViewMode): void {
   const { kind } = useDocumentStore.getState();
-  useDocumentStore.setState({ viewMode: hasFormattedView(kind) ? viewMode : VIEW_MODE.plain });
+  useDocumentStore.setState({ viewMode: canShowViewMode(kind, viewMode) ? viewMode : VIEW_MODE.plain });
 }
 
 export function toggleViewMode(): void {
   const { viewMode } = useDocumentStore.getState();
-  setViewMode(viewMode === VIEW_MODE.formatted ? VIEW_MODE.plain : VIEW_MODE.formatted);
+  setViewMode(viewMode === VIEW_MODE.plain ? VIEW_MODE.formatted : VIEW_MODE.plain);
+}
+
+export function toggleSideBySide(): void {
+  const { viewMode } = useDocumentStore.getState();
+  setViewMode(viewMode === VIEW_MODE.sideBySide ? VIEW_MODE.formatted : VIEW_MODE.sideBySide);
 }
 
 /** True when a tree or table replaces the editor on screen; Markdown's formatted view is the editor itself. */
@@ -69,4 +74,8 @@ export function useShowsSeparateFormattedView(): boolean {
 
 export function useIsLivePreview(): boolean {
   return useDocumentStore((state) => state.viewMode === VIEW_MODE.formatted && state.kind === FILE_KIND.markdown);
+}
+
+export function useShowsSideBySide(): boolean {
+  return useDocumentStore((state) => state.viewMode === VIEW_MODE.sideBySide && state.kind === FILE_KIND.markdown);
 }

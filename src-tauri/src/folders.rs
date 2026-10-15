@@ -1,4 +1,5 @@
 use std::fs;
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -59,7 +60,8 @@ pub fn read_directory(path: String, include_hidden: Option<bool>) -> Result<Vec<
 }
 
 /// Every file under a folder (for Quick Open), skipping hidden entries and dependency/build folders.
-#[tauri::command]
+/// Runs off the main thread, so walking a big folder doesn't freeze every window.
+#[tauri::command(async)]
 pub fn list_folder_files(path: String, include_hidden: Option<bool>) -> Vec<String> {
     let include_hidden = include_hidden.unwrap_or(false);
     let mut files = Vec::new();
@@ -111,16 +113,30 @@ pub fn create_folder(path: String) -> Result<(), String> {
     fs::create_dir(&path).map_err(|error| error.to_string())
 }
 
+/// Whether two paths name the same entry on disk (like "notes.md" and "Notes.md" on a case-insensitive disk).
+fn is_same_entry(first: &Path, second: &Path) -> bool {
+    match (fs::symlink_metadata(first), fs::symlink_metadata(second)) {
+        (Ok(first), Ok(second)) => first.dev() == second.dev() && first.ino() == second.ino(),
+        _ => false,
+    }
+}
+
+/// Refuses a rename that would replace something else. A case-only rename finds itself as the target on
+/// case-insensitive disks, so that one is allowed; on case-sensitive disks "Notes.md" can be a different file.
+fn check_rename_target(from: &Path, to: &Path) -> Result<(), String> {
+    let is_taken = fs::symlink_metadata(to).is_ok();
+    if is_taken && !is_same_entry(from, to) {
+        return Err(format!("“{}” already exists.", file_name_of(to)));
+    }
+    Ok(())
+}
+
 /// Renames a file or folder, then updates every window that shows it.
 #[tauri::command]
 pub fn rename_path(app: AppHandle, from: String, to: String) -> Result<(), String> {
     let from = PathBuf::from(from);
     let to = PathBuf::from(to);
-    // A case-only rename ("notes.md" → "Notes.md") reports the target as existing on case-insensitive disks.
-    let is_case_change = from.to_string_lossy().to_lowercase() == to.to_string_lossy().to_lowercase();
-    if to.exists() && !is_case_change {
-        return Err(format!("“{}” already exists.", file_name_of(&to)));
-    }
+    check_rename_target(&from, &to)?;
     fs::rename(&from, &to).map_err(|error| error.to_string())?;
     windows::handle_path_renamed(&app, &from, &to);
     Ok(())
@@ -184,5 +200,22 @@ mod tests {
         fs::write(&path, "keep me").unwrap();
         assert!(create_file(path.clone()).is_err());
         assert_eq!(fs::read_to_string(&path).unwrap(), "keep me");
+    }
+
+    #[test]
+    fn allows_case_only_renames_but_never_replaces_another_file() {
+        let directory = temporary_directory("rename");
+        let lower = directory.join("notes.md");
+        let upper = directory.join("Notes.md");
+        fs::write(&lower, "lower").unwrap();
+        fs::write(&upper, "upper").unwrap();
+        // On a case-insensitive disk the second write replaced the first, so both names are one file.
+        let is_case_sensitive = fs::read_to_string(&lower).unwrap() == "lower";
+        assert_eq!(check_rename_target(&lower, &upper).is_err(), is_case_sensitive);
+
+        let other = directory.join("other.md");
+        fs::write(&other, "other").unwrap();
+        assert!(check_rename_target(&lower, &other).is_err());
+        assert!(check_rename_target(&lower, &directory.join("free.md")).is_ok());
     }
 }

@@ -131,3 +131,41 @@ export const removeTrailingWhitespace: StateCommand = ({ state, dispatch }) => {
   if (changes.length > 0) dispatch(state.update({ changes, userEvent: 'input.trim' }));
   return true;
 };
+
+const TASK_LINE = /^(\s*(?:>\s*)*(?:[-*+]|\d+[.)])\s+)\[([ xX])\]/;
+const LIST_LINE = /^(\s*(?:>\s*)*(?:[-*+]|\d+[.)])\s+)/;
+const LINE_INDENTATION = /^(\s*(?:>\s*)*)/;
+
+/**
+ * Turns each selected line into a task, or ticks it: a plain line becomes `- [ ] line`, a list item gains
+ * a checkbox, and an existing task is checked or unchecked.
+ */
+export const toggleTask: StateCommand = ({ state, dispatch }) => {
+  const changes: { from: number; to?: number; insert: string }[] = [];
+  const handledLines = new Set<number>();
+  for (const range of state.selection.ranges) {
+    const lastLine = state.doc.lineAt(range.to).number;
+    for (let lineNumber = state.doc.lineAt(range.from).number; lineNumber <= lastLine; lineNumber++) {
+      if (handledLines.has(lineNumber)) continue;
+      handledLines.add(lineNumber);
+      const line = state.doc.line(lineNumber);
+      const task = TASK_LINE.exec(line.text);
+      if (task) {
+        const markerPosition = line.from + task[1].length + 1;
+        changes.push({ from: markerPosition, to: markerPosition + 1, insert: task[2] === ' ' ? 'x' : ' ' });
+        continue;
+      }
+      const listPrefix = LIST_LINE.exec(line.text)?.[1];
+      if (listPrefix) {
+        changes.push({ from: line.from + listPrefix.length, insert: '[ ] ' });
+        continue;
+      }
+      const indentation = LINE_INDENTATION.exec(line.text)?.[1] ?? '';
+      changes.push({ from: line.from + indentation.length, insert: '- [ ] ' });
+    }
+  }
+  const changeSet = state.changes(changes);
+  // Cursors where text was inserted end up after it, ready to type the task.
+  dispatch(state.update({ changes: changeSet, selection: state.selection.map(changeSet, 1), userEvent: 'input.format' }));
+  return true;
+};

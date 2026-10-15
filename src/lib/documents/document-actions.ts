@@ -12,19 +12,27 @@ import {
   showErrorMessage,
   writeTextFile,
 } from '../tauri/backend';
-import { applyTextChanges, getDocumentText, getViewText, markDocumentSaved, replaceDocumentText } from '../editor/editor-session';
-import { openFolder, revealInSidebar } from '../folders/folder-store';
+import {
+  applyTextChanges,
+  getDocumentSnapshot,
+  getDocumentText,
+  getViewText,
+  markDocumentSaved,
+  replaceDocumentText,
+} from '../editor/editor-session';
+import { openFolder, renamedPath, revealInSidebar } from '../folders/folder-store';
 import { flushSettings, useSettingsStore } from '../settings/settings-store';
 import type { FileContents, PathRenamed } from '../tauri/backend';
 import { adoptRecoveredDraft, discardDraft } from './draft-autosave';
-import { FILE_KIND, VIEW_MODE, detectFileKind, getFileName, hasFormattedView, isFileKind } from './file-kind';
+import { FILE_KIND, VIEW_MODE, canShowViewMode, detectFileKind, getFileName, hasFormattedView, isFileKind } from './file-kind';
 import type { FileKind, ViewMode } from './file-kind';
 import { useDocumentStore } from './document-store';
 import { findMissingFinalNewline, findTrailingWhitespace } from './save-cleanup';
 
 function defaultViewModeFor(kind: FileKind): ViewMode {
   if (!hasFormattedView(kind)) return VIEW_MODE.plain;
-  return useSettingsStore.getState().settings.defaultViewMode[kind];
+  const viewMode = useSettingsStore.getState().settings.defaultViewMode[kind];
+  return canShowViewMode(kind, viewMode) ? viewMode : VIEW_MODE.formatted;
 }
 
 function detectLineSeparator(text: string): '\n' | '\r\n' {
@@ -124,14 +132,16 @@ function applySaveCleanup() {
 
 async function writeDocumentTo(path: string): Promise<boolean> {
   applySaveCleanup();
+  // Taken with the text that's written, so typing during a slow write stays unsaved.
+  const writtenDocument = getDocumentSnapshot();
   const result = await writeTextFile(path, getDocumentText());
   if (!result.isOk) {
     await showErrorMessage(`Couldn't save “${getFileName(path)}”`, result.error);
     return false;
   }
-  markDocumentSaved();
+  markDocumentSaved(writtenDocument);
   useDocumentStore.setState({ modifiedTime: result.value, hasInvalidUtf8: false });
-  await discardDraft();
+  if (!useDocumentStore.getState().isDirty) await discardDraft();
   return true;
 }
 
@@ -218,10 +228,11 @@ export async function checkForExternalChanges(): Promise<void> {
 }
 
 /** Follows a rename made in the sidebar (in any window): this document's path changes if it was the file or inside the folder. */
-export function handlePathRenamed({ from, to }: PathRenamed): void {
+export function handlePathRenamed(rename: PathRenamed): void {
   const { path, kind } = useDocumentStore.getState();
-  if (!path || (path !== from && !path.startsWith(`${from}/`))) return;
-  const newPath = to + path.slice(from.length);
+  if (!path) return;
+  const newPath = renamedPath(path, rename);
+  if (newPath === path) return;
   const newKind = detectFileKind(newPath);
   useDocumentStore.setState({ path: newPath, kind: newKind });
   if (newKind !== kind) applyDefaultViewMode();

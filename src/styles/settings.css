@@ -27,7 +27,7 @@
   border-radius: var(--radius-large);
   background: transparent;
   color: var(--color-muted-foreground);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .settings-tabs button.is-active {
@@ -38,6 +38,8 @@
 .settings-content {
   flex: 1;
   overflow: auto;
+  /* Room for the scrollbar on every tab, so content doesn't shift sideways when switching. */
+  scrollbar-gutter: stable;
   padding: 20px 28px 40px;
 }
 
@@ -84,7 +86,7 @@
 }
 
 .setting-row-description {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--color-muted-foreground);
 }
 
@@ -95,8 +97,17 @@
   flex: none;
 }
 
+/* Settings controls are roomier than the compact ones in toolbars. */
+.settings-content :is(input[type='text'], input[type='number'], select),
+.theme-section-customize,
+.theme-editor-header button,
+.theme-editor-undo button {
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
 .number-input {
-  width: 72px;
+  width: 76px;
   text-align: right;
 }
 
@@ -116,6 +127,37 @@
   font-size: 13px;
   color: var(--color-muted-foreground);
   white-space: nowrap;
+}
+
+/* Theme sections: heading, when the theme is used, and a shortcut to the colour editor */
+
+.theme-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px 4px;
+}
+
+.theme-section-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-group .theme-section-title h2 {
+  margin: 0;
+}
+
+.theme-section-usage {
+  font-size: 12px;
+  color: var(--color-muted-foreground);
+}
+
+.theme-section-customize {
+  flex: none;
+  font-size: 12px;
 }
 
 /* Theme cards */
@@ -207,13 +249,25 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  flex-wrap: wrap;
+  row-gap: 3px;
   padding-left: 2px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-foreground);
 }
 
 .theme-card-name .icon {
   color: var(--color-accent);
+}
+
+/* Marks the theme the windows show right now. */
+.theme-card-tag {
+  padding: 1px 6px;
+  border-radius: var(--radius-small);
+  background: var(--color-accent-soft);
+  color: var(--color-foreground);
+  font-size: 11px;
+  font-weight: 500;
 }
 
 /* Colour editor (inside a disclosure under the theme cards) */
@@ -225,6 +279,12 @@
 
 .theme-customize summary::-webkit-details-marker {
   display: none;
+}
+
+.theme-customize summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-small);
 }
 
 .theme-customize summary h2 {
@@ -279,6 +339,18 @@
   min-width: 200px;
 }
 
+/* Shown after deleting a custom theme, until the next change in the editor. */
+.theme-editor-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius-medium);
+  background: var(--color-hover);
+}
+
 .settings-hint {
   margin: 0 0 12px;
   color: var(--color-muted-foreground);
@@ -299,8 +371,8 @@
 /* Swatches get an outline in both light and dark, so a colour close to the background still shows. */
 .color-field input[type='color'] {
   flex: none;
-  width: 30px;
-  height: 22px;
+  width: 34px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: var(--radius-small);
@@ -336,4 +408,55 @@
   border: 1px solid;
   border-radius: var(--radius-large);
   font-family: var(--font-editor);
+}
+
+/* Shortcuts */
+
+.shortcut-toolbar {
+  display: flex;
+  gap: 8px;
+  max-width: 640px;
+  margin: 0 auto 16px;
+}
+
+.shortcut-toolbar input {
+  flex: 1;
+}
+
+.shortcut-notice {
+  max-width: 640px;
+  margin: -6px auto 14px;
+  padding-left: 4px;
+}
+
+.shortcut-row {
+  min-height: 38px;
+  padding-block: 4px;
+}
+
+.shortcut-recorder {
+  min-width: 96px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.shortcut-recorder.is-empty {
+  color: var(--color-muted-foreground);
+}
+
+.shortcut-recorder.is-recording {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.shortcut-reset {
+  border: none;
+  background: transparent;
+  color: var(--color-link);
+  font-size: 12px;
 }

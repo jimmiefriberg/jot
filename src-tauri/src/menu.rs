@@ -1,21 +1,82 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Mutex;
 
+use serde::Serialize;
+use serde_json::Value;
 use tauri::menu::{AboutMetadata, Menu, MenuBuilder, MenuItem, MenuItemBuilder, Submenu, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
+use crate::panes;
 use crate::recent;
+use crate::settings;
 use crate::windows;
 
 const RECENT_ITEM_PREFIX: &str = "recent.open.";
 const CLEAR_RECENT_ID: &str = "recent.clear";
+const SELECT_TAB_PREFIX: &str = "window.selectTab.";
+const SELECT_LAST_TAB_ID: &str = "window.selectLastTab";
+
+/// A menu command whose shortcut can be changed in Settings.
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MenuCommand {
+    id: String,
+    label: String,
+    menu: String,
+    default_shortcut: Option<String>,
+}
+
+/// The commands from the last menu build, for the Shortcuts settings.
+#[derive(Default)]
+pub struct MenuCommands(Mutex<Vec<MenuCommand>>);
 
 fn menu_item<R: Runtime>(app: &AppHandle<R>, id: &str, text: &str, accelerator: Option<&str>) -> tauri::Result<MenuItem<R>> {
     let builder = MenuItemBuilder::with_id(id, text);
-    let builder = match accelerator {
-        Some(accelerator) => builder.accelerator(accelerator),
-        None => builder,
-    };
-    builder.build(app)
+    match accelerator {
+        // A shortcut the menu can't read (hand-edited settings) leaves the item without one rather than breaking the menu.
+        Some(accelerator) => builder.accelerator(accelerator).build(app).or_else(|_| MenuItemBuilder::with_id(id, text).build(app)),
+        None => builder.build(app),
+    }
+}
+
+/// Shortcuts chosen in Settings, by command id. An empty string removes the shortcut.
+fn shortcut_overrides<R: Runtime>(app: &AppHandle<R>) -> HashMap<String, String> {
+    settings::read_settings(app)
+        .and_then(|settings| settings.get("shortcuts").cloned())
+        .and_then(|shortcuts| serde_json::from_value::<HashMap<String, Value>>(shortcuts).ok())
+        .map(|shortcuts| {
+            shortcuts
+                .into_iter()
+                .filter_map(|(id, shortcut)| shortcut.as_str().map(|shortcut| (id, shortcut.to_string())))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Builds command items with the user's shortcut (or the default) and records each command for Settings.
+struct CommandItems<'a, R: Runtime> {
+    app: &'a AppHandle<R>,
+    overrides: HashMap<String, String>,
+    commands: RefCell<Vec<MenuCommand>>,
+}
+
+impl<R: Runtime> CommandItems<'_, R> {
+    fn item(&self, menu: &str, id: &str, text: &str, default_shortcut: Option<&str>) -> tauri::Result<MenuItem<R>> {
+        self.commands.borrow_mut().push(MenuCommand {
+            id: id.to_string(),
+            label: text.to_string(),
+            menu: menu.to_string(),
+            default_shortcut: default_shortcut.map(str::to_string),
+        });
+        let shortcut = match self.overrides.get(id) {
+            Some(shortcut) if shortcut.is_empty() => None,
+            Some(shortcut) => Some(shortcut.as_str()),
+            None => default_shortcut,
+        };
+        menu_item(self.app, id, text, shortcut)
+    }
 }
 
 /// "notes.md — Documents", so files with the same name in different folders can be told apart.
@@ -41,7 +102,20 @@ fn build_recent_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Submenu<R>
 }
 
 pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let item = |id: &str, text: &str, accelerator: Option<&str>| menu_item(app, id, text, accelerator);
+    let command_items = CommandItems { app, overrides: shortcut_overrides(app), commands: RefCell::new(Vec::new()) };
+    let item = |id: &str, text: &str, accelerator: Option<&str>| {
+        let menu = match id.split('.').next() {
+            Some("app") => "Jot",
+            Some("file") => "File",
+            Some("edit") => "Edit",
+            Some("selection") => "Selection",
+            Some("format") => "Format",
+            Some("table") => "Table",
+            Some("window") => "Window",
+            _ => "View",
+        };
+        command_items.item(menu, id, text, accelerator)
+    };
 
     let app_menu = SubmenuBuilder::new(app, "Jot")
         .about(Some(AboutMetadata::default()))
@@ -59,12 +133,13 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     let file_menu = SubmenuBuilder::new(app, "File")
         .item(&item("file.new", "New", Some("CmdOrCtrl+N"))?)
+        .item(&item("file.newWindow", "New Window", Some("CmdOrCtrl+Shift+N"))?)
         .item(&item("file.open", "Open…", Some("CmdOrCtrl+O"))?)
         .item(&build_recent_menu(app)?)
         .item(&item("file.openFolder", "Open Folder…", Some("CmdOrCtrl+Shift+O"))?)
         .item(&item("file.quickOpen", "Quick Open…", Some("CmdOrCtrl+P"))?)
         .separator()
-        .close_window()
+        .item(&item("file.close", "Close", Some("CmdOrCtrl+W"))?)
         .item(&item("file.save", "Save", Some("CmdOrCtrl+S"))?)
         .item(&item("file.saveAs", "Save As…", Some("CmdOrCtrl+Shift+S"))?)
         .item(&item("file.revert", "Revert to Saved", None)?)
@@ -112,6 +187,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&item("format.italic", "Italic", Some("CmdOrCtrl+I"))?)
         .item(&item("format.inlineCode", "Inline Code", Some("CmdOrCtrl+Shift+C"))?)
         .item(&item("format.link", "Link", Some("CmdOrCtrl+K"))?)
+        .item(&item("format.toggleTask", "Toggle Task", Some("CmdOrCtrl+Shift+T"))?)
         .separator()
         .item(&item("format.upperCase", "Make Upper Case", None)?)
         .item(&item("format.lowerCase", "Make Lower Case", None)?)
@@ -130,8 +206,10 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     // Column moves use ⌥←/⌥→ handled inside the table, so word navigation in text keeps working.
     let table_menu = SubmenuBuilder::new(app, "Table")
-        .item(&item("table.insertColumnLeft", "Insert Column Left", None)?)
-        .item(&item("table.insertColumnRight", "Insert Column Right", None)?)
+        .item(&item("table.insertRowAbove", "Insert Row Above", None)?)
+        .item(&item("table.insertRowBelow", "Insert Row Below", None)?)
+        .item(&item("table.insertColumnLeft", "Insert Column Left", Some("CmdOrCtrl+Alt+ArrowLeft"))?)
+        .item(&item("table.insertColumnRight", "Insert Column Right", Some("CmdOrCtrl+Alt+ArrowRight"))?)
         .separator()
         .item(&item("table.moveColumnLeft", "Move Column Left  (⌥←)", None)?)
         .item(&item("table.moveColumnRight", "Move Column Right  (⌥→)", None)?)
@@ -146,9 +224,11 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     let view_menu = SubmenuBuilder::new(app, "View")
         .item(&item("view.toggleFormatted", "Toggle Formatted / Plain", Some("CmdOrCtrl+E"))?)
+        .item(&item("view.sideBySide", "Toggle Side by Side Preview", Some("CmdOrCtrl+Alt+E"))?)
         .item(&item("view.toggleSidebar", "Toggle Sidebar", Some("CmdOrCtrl+Backslash"))?)
         .item(&item("view.showOutline", "Show Outline", Some("CmdOrCtrl+Alt+O"))?)
         .item(&item("view.swapSidebarSide", "Move Sidebar to Other Side", None)?)
+        .item(&item("view.splitRight", "Split Right", Some("CmdOrCtrl+Alt+Backslash"))?)
         .separator()
         .item(&item("view.wordWrap", "Toggle Word Wrap", Some("Alt+Z"))?)
         .item(&item("view.lineNumbers", "Toggle Line Numbers", None)?)
@@ -167,11 +247,30 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .fullscreen()
         .build()?;
 
-    let window_menu = SubmenuBuilder::new(app, "Window").minimize().maximize().build()?;
+    let mut window_menu = SubmenuBuilder::new(app, "Window").minimize().maximize().separator();
+    for number in 1..=8 {
+        window_menu = window_menu.item(&item(&format!("{SELECT_TAB_PREFIX}{number}"), &format!("Show Tab {number}"), Some(&format!("CmdOrCtrl+{number}")))?);
+    }
+    let window_menu = window_menu.item(&item(SELECT_LAST_TAB_ID, "Show Last Tab", Some("CmdOrCtrl+9"))?).build()?;
 
-    MenuBuilder::new(app)
+    let menu = MenuBuilder::new(app)
         .items(&[&app_menu, &file_menu, &edit_menu, &selection_menu, &format_menu, &table_menu, &view_menu, &window_menu])
-        .build()
+        .build()?;
+    if let Some(menu_commands) = app.try_state::<MenuCommands>() {
+        *menu_commands.0.lock().unwrap() = command_items.commands.into_inner();
+    }
+    Ok(menu)
+}
+
+pub fn rebuild_menu<R: Runtime>(app: &AppHandle<R>) {
+    if let Ok(app_menu) = build_menu(app) {
+        let _ = app.set_menu(app_menu);
+    }
+}
+
+#[tauri::command]
+pub fn get_menu_commands(menu_commands: tauri::State<MenuCommands>) -> Vec<MenuCommand> {
+    menu_commands.0.lock().unwrap().clone()
 }
 
 fn open_recent_item<R: Runtime>(app: &AppHandle<R>, index_text: &str) {
@@ -187,6 +286,12 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
         open_recent_item(app, index_text);
         return;
     }
+    // In Settings, ⌘1–⌘5 fall through to the window, which uses them for its own tabs.
+    let is_document_focused = windows::focused_document_window(app).is_some();
+    if let Some(number) = id.strip_prefix(SELECT_TAB_PREFIX).and_then(|text| text.parse::<usize>().ok()).filter(|_| is_document_focused) {
+        windows::select_tab_in_focused_window(app, number.checked_sub(1));
+        return;
+    }
     match id {
         "app.settings" => {
             let _ = windows::open_settings_window(app);
@@ -195,16 +300,18 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
         "file.new" => {
             let _ = windows::open_document_window(app, None, None);
         }
+        "file.close" => panes::close_focused(app),
+        "view.splitRight" => panes::split_right(app),
+        "file.newWindow" => {
+            let _ = windows::open_document_in_new_window(app, None, None);
+        }
+        SELECT_LAST_TAB_ID => windows::select_tab_in_focused_window(app, None),
         "file.open" => windows::show_open_dialog(app),
         "file.openFolder" => windows::show_open_folder_dialog(app),
         CLEAR_RECENT_ID => recent::clear_recent_items(app),
         _ => {
-            let focused_window = app
-                .webview_windows()
-                .into_values()
-                .find(|window| window.is_focused().unwrap_or(false));
-            if let Some(window) = focused_window {
-                let _ = app.emit_to(window.label(), "menu-action", id);
+            if let Some(target) = windows::focused_menu_target(app) {
+                let _ = app.emit_to(target.as_str(), "menu-action", id);
             }
         }
     }

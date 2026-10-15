@@ -105,7 +105,8 @@ export function stopRenaming(): void {
   useFolderStore.setState({ renamingPath: null });
 }
 
-function renamedPath(path: string, { from, to }: PathRenamed): string {
+/** `path` after a rename of `from` to `to`: the renamed entry itself, or something inside a renamed folder. */
+export function renamedPath(path: string, { from, to }: PathRenamed): string {
   if (path === from) return to;
   return path.startsWith(`${from}/`) ? to + path.slice(from.length) : path;
 }

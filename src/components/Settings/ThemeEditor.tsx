@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { deleteCustomTheme, getAllThemes, isBuiltInTheme, saveCustomTheme } from '../../lib/settings/settings-schema';
@@ -18,6 +19,13 @@ function createThemeId(): string {
   return `custom-${Date.now().toString(36)}`;
 }
 
+/** A deleted theme and the picks it was used for, so Undo can put everything back. */
+interface DeletedTheme {
+  theme: Theme;
+  lightThemeId: string;
+  darkThemeId: string;
+}
+
 function themePreviewStyle(theme: Theme) {
   return {
     backgroundColor: theme.colors.background,
@@ -32,12 +40,14 @@ export function ThemeEditor({ themeId, onSelectTheme }: ThemeEditorProps) {
   const themes = getAllThemes(settings);
   const theme = themes.find((candidate) => candidate.id === themeId) ?? themes[0];
   const isEditable = !isBuiltInTheme(theme.id);
+  const [deletedTheme, setDeletedTheme] = useState<DeletedTheme | null>(null);
 
   function saveTheme(updatedTheme: Theme) {
     updateSettings(saveCustomTheme(settings, updatedTheme));
   }
 
   function handleSelectTheme(event: ChangeEvent<HTMLSelectElement>) {
+    setDeletedTheme(null);
     onSelectTheme(event.target.value);
   }
 
@@ -45,12 +55,22 @@ export function ThemeEditor({ themeId, onSelectTheme }: ThemeEditorProps) {
     const copy: Theme = { ...theme, id: createThemeId(), name: `${theme.name} copy`, colors: { ...theme.colors } };
     const appearanceKey = copy.isDark ? 'darkThemeId' : 'lightThemeId';
     updateSettings({ customThemes: [...settings.customThemes, copy], [appearanceKey]: copy.id });
+    setDeletedTheme(null);
     onSelectTheme(copy.id);
   }
 
   function handleDelete() {
+    setDeletedTheme({ theme, lightThemeId: settings.lightThemeId, darkThemeId: settings.darkThemeId });
     updateSettings(deleteCustomTheme(settings, theme.id));
     onSelectTheme(theme.isDark ? DEFAULT_DARK_THEME_ID : DEFAULT_LIGHT_THEME_ID);
+  }
+
+  function handleUndoDelete() {
+    if (!deletedTheme) return;
+    const { lightThemeId, darkThemeId } = deletedTheme;
+    updateSettings({ customThemes: [...settings.customThemes, deletedTheme.theme], lightThemeId, darkThemeId });
+    onSelectTheme(deletedTheme.theme.id);
+    setDeletedTheme(null);
   }
 
   function handleRename(event: ChangeEvent<HTMLInputElement>) {
@@ -69,6 +89,12 @@ export function ThemeEditor({ themeId, onSelectTheme }: ThemeEditorProps) {
 
   return (
     <div className="theme-editor">
+      {deletedTheme && (
+        <div className="theme-editor-undo">
+          <span>Deleted “{deletedTheme.theme.name}”.</span>
+          <button onClick={handleUndoDelete}>Undo</button>
+        </div>
+      )}
       <div className="theme-editor-header">
         <select value={theme.id} onChange={handleSelectTheme} aria-label="Theme to edit">
           {themes.map((candidate) => (

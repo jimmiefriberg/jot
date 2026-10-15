@@ -33,3 +33,8 @@ test('finds the heading the cursor is under', () => {
   expect(findCurrentHeading(headings, 5)?.lineIndex).toBe(3);
   expect(findCurrentHeading(headings, 0)?.lineIndex).toBe(0);
 });
+
+test('skips YAML front matter', () => {
+  const headings = extractOutline('---\ntitle: Notes\n---\n\n# Real heading');
+  expect(headings.map((heading) => heading.text)).toEqual(['Real heading']);
+});

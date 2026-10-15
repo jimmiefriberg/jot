@@ -1,5 +1,6 @@
 import { getDocumentLength, getDocumentText } from '../editor/editor-session';
-import { deleteDraft, writeDraft } from '../tauri/backend';
+import { deleteDraft, showErrorMessage, writeDraft } from '../tauri/backend';
+import type { Draft } from '../tauri/backend';
 import { useDocumentStore } from './document-store';
 
 /** Unsaved text is written to a draft this long after typing pauses, so a crash loses at most a moment of work. */
@@ -9,6 +10,18 @@ const MAXIMUM_DRAFT_LENGTH = 10_000_000;
 
 let pendingDraftTimer: ReturnType<typeof setTimeout> | null = null;
 let hasDraftOnDisk = false;
+let hasWarnedAboutFailedDraft = false;
+
+/** Writes the draft, warning once per window when it fails: crash recovery is off until it works again. */
+async function writeDraftOrWarn(draft: Draft) {
+  const result = await writeDraft(draft);
+  if (result.isOk || hasWarnedAboutFailedDraft) return;
+  hasWarnedAboutFailedDraft = true;
+  await showErrorMessage(
+    "Couldn't keep a recovery copy",
+    `Unsaved changes in this window won't come back after a crash, so save them soon. (${result.error})`,
+  );
+}
 
 function saveDraftNow() {
   pendingDraftTimer = null;
@@ -19,7 +32,7 @@ function saveDraftNow() {
     return;
   }
   hasDraftOnDisk = true;
-  void writeDraft({ id: draftId, path, text: getDocumentText() });
+  void writeDraftOrWarn({ id: draftId, path, text: getDocumentText() });
 }
 
 function scheduleDraftSave() {

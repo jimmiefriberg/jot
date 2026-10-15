@@ -2,10 +2,13 @@ import type { CSSProperties } from 'react';
 
 import type { Theme } from '../../lib/settings/theme-presets';
 import { Icon } from '../Icon/Icon';
+import { handleChoiceGroupKeyDown } from './choice-group-keys';
 
 interface ThemeGridProps {
   themes: Theme[];
   selectedThemeId: string;
+  /** The theme the windows show right now. */
+  activeThemeId: string;
   onSelect: (themeId: string) => void;
 }
 
@@ -33,31 +36,43 @@ function ThemeSwatch({ theme }: { theme: Theme }) {
 interface ThemeCardProps {
   theme: Theme;
   isSelected: boolean;
+  isInUse: boolean;
+  /** The one card the Tab key stops at; arrow keys reach the rest. */
+  isFocusable: boolean;
   onSelect: (themeId: string) => void;
 }
 
-function ThemeCard({ theme, isSelected, onSelect }: ThemeCardProps) {
+function ThemeCard({ theme, isSelected, isInUse, isFocusable, onSelect }: ThemeCardProps) {
   function handleClick() {
     onSelect(theme.id);
   }
 
   return (
-    <button className={`theme-card${isSelected ? ' is-selected' : ''}`} onClick={handleClick} role="radio" aria-checked={isSelected}>
+    <button className={`theme-card${isSelected ? ' is-selected' : ''}`} onClick={handleClick} role="radio" aria-checked={isSelected} tabIndex={isFocusable ? 0 : -1}>
       <ThemeSwatch theme={theme} />
       <span className="theme-card-name">
         {theme.name}
         {isSelected && <Icon name="check" size={12} />}
+        {isInUse && <span className="theme-card-tag">In use</span>}
       </span>
     </button>
   );
 }
 
 /** Theme picker: a card per theme with a small preview. */
-export function ThemeGrid({ themes, selectedThemeId, onSelect }: ThemeGridProps) {
+export function ThemeGrid({ themes, selectedThemeId, activeThemeId, onSelect }: ThemeGridProps) {
+  const hasSelection = themes.some((theme) => theme.id === selectedThemeId);
   return (
-    <div className="theme-grid" role="radiogroup">
-      {themes.map((theme) => (
-        <ThemeCard key={theme.id} theme={theme} isSelected={theme.id === selectedThemeId} onSelect={onSelect} />
+    <div className="theme-grid" role="radiogroup" onKeyDown={handleChoiceGroupKeyDown}>
+      {themes.map((theme, index) => (
+        <ThemeCard
+          key={theme.id}
+          theme={theme}
+          isSelected={theme.id === selectedThemeId}
+          isInUse={theme.id === activeThemeId}
+          isFocusable={hasSelection ? theme.id === selectedThemeId : index === 0}
+          onSelect={onSelect}
+        />
       ))}
     </div>
   );

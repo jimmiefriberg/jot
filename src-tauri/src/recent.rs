@@ -31,12 +31,6 @@ fn store_recent_items<R: Runtime>(app: &AppHandle<R>, paths: &[PathBuf]) {
     }
 }
 
-fn rebuild_menu<R: Runtime>(app: &AppHandle<R>) {
-    if let Ok(app_menu) = menu::build_menu(app) {
-        let _ = app.set_menu(app_menu);
-    }
-}
-
 /// Adds or moves a path to the top of the list, newest first.
 fn push_front(paths: &mut Vec<PathBuf>, path: &Path) {
     paths.retain(|existing| existing != path);
@@ -58,7 +52,7 @@ pub fn load_recent_items<R: Runtime>(app: &AppHandle<R>) {
         .unwrap_or_default();
     let paths = stored.into_iter().map(PathBuf::from).take(MAXIMUM_RECENT_ITEMS).collect();
     *app.state::<RecentItems>().paths.lock().unwrap() = paths;
-    rebuild_menu(app);
+    menu::rebuild_menu(app);
 }
 
 /// Recent files and folders that still exist, newest first.
@@ -78,7 +72,7 @@ pub fn note_recent_item<R: Runtime>(app: &AppHandle<R>, path: &Path) {
         paths.clone()
     };
     store_recent_items(app, &paths);
-    rebuild_menu(app);
+    menu::rebuild_menu(app);
 }
 
 pub fn rename_recent_items<R: Runtime>(app: &AppHandle<R>, from: &Path, to: &Path) {
@@ -93,13 +87,13 @@ pub fn rename_recent_items<R: Runtime>(app: &AppHandle<R>, from: &Path, to: &Pat
         paths.clone()
     };
     store_recent_items(app, &paths);
-    rebuild_menu(app);
+    menu::rebuild_menu(app);
 }
 
 pub fn clear_recent_items<R: Runtime>(app: &AppHandle<R>) {
     app.state::<RecentItems>().paths.lock().unwrap().clear();
     store_recent_items(app, &[]);
-    rebuild_menu(app);
+    menu::rebuild_menu(app);
 }
 
 /// Recent files (not folders) for Quick Open.

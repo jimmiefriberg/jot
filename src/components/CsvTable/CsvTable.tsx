@@ -105,6 +105,8 @@ export function CsvTable() {
     'selection.moveLineDown': moveRowsDown,
     'selection.insertLineAbove': insertRowAbove,
     'selection.insertLineBelow': insertRowBelow,
+    'table.insertRowAbove': insertRowAbove,
+    'table.insertRowBelow': insertRowBelow,
     'selection.deleteLine': table.deleteSelectedRows,
     'table.deleteRows': table.deleteSelectedRows,
     'table.deleteColumns': table.deleteSelectedColumns,

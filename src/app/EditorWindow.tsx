@@ -1,10 +1,14 @@
 import { FILE_KIND } from '../lib/documents/file-kind';
-import { useDocumentStore, useShowsSeparateFormattedView } from '../lib/documents/document-store';
+import { useDocumentStore, useShowsSeparateFormattedView, useShowsSideBySide } from '../lib/documents/document-store';
 import { useSettingsSync } from '../lib/settings/use-settings-sync';
+import { PANE_POSITION } from '../lib/tauri/backend';
+import { usePanePosition } from '../lib/window/use-pane-position';
 import { useDocumentBootstrap, useShowWindowWhenReady, useWindowIntegration } from './use-editor-window';
 import { CsvTable } from '../components/CsvTable/CsvTable';
 import { JsonTree, YamlTree } from '../components/DataTree/DataTree';
+import { PaneDivider } from '../components/PaneDivider/PaneDivider';
 import { QuickOpen } from '../components/QuickOpen/QuickOpen';
+import { SideBySidePreview } from '../components/SideBySidePreview/SideBySidePreview';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import { SourceEditor } from '../components/SourceEditor/SourceEditor';
 import { StatusBar } from '../components/StatusBar/StatusBar';
@@ -31,24 +35,29 @@ export function EditorWindow() {
   useWindowIntegration();
   const isLoaded = useDocumentBootstrap();
   const showsSeparateView = useShowsSeparateFormattedView();
+  const showsSideBySide = useShowsSideBySide();
+  const isEditorReady = useDocumentStore((state) => state.isEditorReady);
   const documentId = useDocumentStore((state) => state.documentId);
   const initialText = useDocumentStore((state) => state.initialText);
+  const panePosition = usePanePosition();
   useShowWindowWhenReady(isLoaded);
 
   if (!isLoaded) return null;
 
   // Keyed by document, so opening another file from the sidebar starts a fresh editor and view.
   return (
-    <div className="editor-window">
+    <div className="editor-window" data-pane={panePosition}>
       <div className="window-body">
-        <main className="document-area">
+        <main className="document-area" data-side-by-side={showsSideBySide || undefined}>
           <SourceEditor key={`editor-${documentId}`} initialText={initialText} isVisible={!showsSeparateView} />
           {showsSeparateView && <FormattedView key={`view-${documentId}`} />}
+          {showsSideBySide && isEditorReady && <SideBySidePreview key={`preview-${documentId}`} />}
         </main>
         <Sidebar />
       </div>
       <StatusBar />
       <QuickOpen />
+      {panePosition === PANE_POSITION.left && <PaneDivider />}
     </div>
   );
 }

@@ -1,0 +1,10 @@
+{
+  // JSON with comments, like VS Code settings.
+  "editor.fontSize": 14,
+  "editor.wordWrap": "on",
+  /* Block comments work too. */
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+  },
+}

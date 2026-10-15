@@ -15,6 +15,8 @@ export type FormattableKind = Exclude<FileKind, typeof FILE_KIND.text>;
 export const VIEW_MODE = {
   formatted: 'formatted',
   plain: 'plain',
+  /** Markdown only: the plain editor with the formatted view beside it. */
+  sideBySide: 'sideBySide',
 } as const;
 
 export type ViewMode = (typeof VIEW_MODE)[keyof typeof VIEW_MODE];
@@ -87,4 +89,11 @@ export function hasSeparateFormattedView(kind: FileKind): boolean {
 /** Whether a kind has a formatted (rendered) view in addition to the plain editor. */
 export function hasFormattedView(kind: FileKind): kind is FormattableKind {
   return kind !== FILE_KIND.text;
+}
+
+/** Whether a kind can be shown in a view mode: plain text is only plain, and only Markdown has side by side. */
+export function canShowViewMode(kind: FileKind, viewMode: ViewMode): boolean {
+  if (viewMode === VIEW_MODE.plain) return true;
+  if (viewMode === VIEW_MODE.sideBySide) return kind === FILE_KIND.markdown;
+  return hasFormattedView(kind);
 }

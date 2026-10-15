@@ -1,6 +1,6 @@
 import { FILE_KIND, VIEW_MODE, hasSeparateFormattedView } from '../documents/file-kind';
 import { revertDocument, saveDocument, saveDocumentAs } from '../documents/document-actions';
-import { setViewMode, toggleViewMode, useDocumentStore } from '../documents/document-store';
+import { setViewMode, toggleSideBySide, toggleViewMode, useDocumentStore } from '../documents/document-store';
 import { convertCurrentDocument } from '../convert/convert-actions';
 import { focusEditor, getViewText, redoDocument, replaceDocumentText, runEditorCommand, undoDocument } from '../editor/editor-session';
 import { formatJson } from '../json/json-tree';
@@ -12,7 +12,9 @@ import { resetZoom, toggleWordWrap, zoomIn, zoomOut } from '../window/window-vie
 import { runViewCommand } from './command-bus';
 
 function formatDocument() {
-  if (useDocumentStore.getState().kind !== FILE_KIND.json) return;
+  const { kind } = useDocumentStore.getState();
+  if (kind === FILE_KIND.markdown) runEditorCommand('format.tables');
+  if (kind !== FILE_KIND.json) return;
   const text = getViewText();
   const formatted = formatJson(text, useSettingsStore.getState().settings.tabSize);
   if (formatted !== text) replaceDocumentText(formatted, 'input.format');
@@ -55,6 +57,7 @@ const DOCUMENT_COMMANDS: Record<string, () => unknown> = {
   'edit.undo': undoDocument,
   'edit.redo': redoDocument,
   'view.toggleFormatted': toggleViewMode,
+  'view.sideBySide': toggleSideBySide,
   'view.toggleSidebar': toggleSidebar,
   'view.showOutline': showOutline,
   'view.swapSidebarSide': swapSidebarSide,

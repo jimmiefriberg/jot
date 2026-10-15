@@ -1,5 +1,5 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { EditorView } from '@codemirror/view';
+import { Decoration, EditorView } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 
 // Every colour is a CSS variable, so switching themes never needs to rebuild the editor.
@@ -21,6 +21,7 @@ const editorChrome = EditorView.theme({
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
     { backgroundColor: 'var(--color-selection)' },
   '.cm-activeLine': { backgroundColor: 'var(--color-active-line)' },
+  '.cm-selectedText': { backgroundColor: 'var(--color-selection)' },
   '.cm-gutters': {
     backgroundColor: 'var(--color-gutter-background)',
     color: 'var(--color-gutter-foreground)',
@@ -83,6 +84,21 @@ const highlightStyle = HighlightStyle.define([
   { tag: [tags.bool, tags.null, tags.keyword], color: 'var(--color-keyword)' },
   { tag: [tags.comment, tags.lineComment, tags.blockComment], color: 'var(--color-comment)', fontStyle: 'italic' },
   { tag: [tags.punctuation, tags.separator, tags.brace, tags.squareBracket], color: 'var(--color-punctuation)' },
+  // Code in other languages (Markdown code blocks): functions, classes, constants, regular expressions, diffs.
+  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.macroName], color: 'var(--color-link)' },
+  { tag: [tags.className, tags.definition(tags.typeName), tags.namespace], color: 'var(--color-heading)' },
+  { tag: [tags.atom, tags.self, tags.operatorKeyword], color: 'var(--color-keyword)' },
+  { tag: [tags.constant(tags.variableName), tags.standard(tags.variableName), tags.regexp, tags.escape, tags.special(tags.string)], color: 'var(--color-number)' },
+  { tag: tags.operator, color: 'var(--color-punctuation)' },
+  { tag: tags.inserted, color: 'var(--color-string)' },
+  { tag: tags.deleted, color: 'var(--color-number)' },
 ]);
 
-export const editorTheme = [editorChrome, syntaxHighlighting(highlightStyle)];
+const SELECTED_TEXT = Decoration.mark({ class: 'cm-selectedText' });
+
+// The selection layer sits behind the lines, so line backgrounds (current line, code blocks) hid it; this colours the selected text itself.
+const selectedTextBackground = EditorView.decorations.compute(['selection'], (state) =>
+  Decoration.set(state.selection.ranges.filter((range) => !range.empty).map((range) => SELECTED_TEXT.range(range.from, range.to))),
+);
+
+export const editorTheme = [editorChrome, syntaxHighlighting(highlightStyle), selectedTextBackground];

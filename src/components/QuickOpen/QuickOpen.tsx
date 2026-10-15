@@ -11,7 +11,8 @@ import { closeQuickOpen, useQuickOpenStore } from '../../lib/quick-open/quick-op
 import { rankPaths } from '../../lib/search/fuzzy-match';
 import type { RankedPath } from '../../lib/search/fuzzy-match';
 import { useSettingsStore } from '../../lib/settings/settings-store';
-import { getRecentFiles, listFolderFiles, openPaths } from '../../lib/tauri/backend';
+import { getRecentFiles, listFolderFiles, openPaths, placementForClick } from '../../lib/tauri/backend';
+import type { OpenPlacement } from '../../lib/tauri/backend';
 import { Icon } from '../Icon/Icon';
 
 /** Recent files first, then the folder's files, each path once. */
@@ -55,10 +56,10 @@ function QuickOpenList({ folderPath }: QuickOpenListProps) {
   const results = rankPaths(query, useCandidatePaths(folderPath), folderPath);
   const activeResult = results[Math.min(activeIndex, results.length - 1)];
 
-  function openResult(result: RankedPath | undefined, isNewWindow: boolean) {
+  function openResult(result: RankedPath | undefined, placement: OpenPlacement | null) {
     if (!result) return;
     closeQuickOpen();
-    if (isNewWindow) void openPaths([result.path], folderPath);
+    if (placement) void openPaths([result.path], folderPath, placement);
     else void openFileInThisWindow(result.path);
   }
 
@@ -76,12 +77,12 @@ function QuickOpenList({ folderPath }: QuickOpenListProps) {
     }
     if (event.key === 'Enter') {
       event.preventDefault();
-      openResult(activeResult, event.metaKey || event.ctrlKey);
+      openResult(activeResult, placementForClick(event));
     }
   }
 
   function handleResultClick(event: MouseEvent<HTMLButtonElement>) {
-    openResult(results[Number(event.currentTarget.dataset.index)], event.metaKey || event.ctrlKey);
+    openResult(results[Number(event.currentTarget.dataset.index)], placementForClick(event));
   }
 
   function scrollIntoViewIfActive(element: HTMLButtonElement | null) {
@@ -126,7 +127,13 @@ function QuickOpenList({ folderPath }: QuickOpenListProps) {
           <kbd>↩</kbd> open
         </span>
         <span>
-          <kbd>⌘↩</kbd> new window
+          <kbd>⌥↩</kbd> beside
+        </span>
+        <span>
+          <kbd>⌘↩</kbd> new tab
+        </span>
+        <span>
+          <kbd>⇧⌘↩</kbd> new window
         </span>
         <span>
           <kbd>esc</kbd> close

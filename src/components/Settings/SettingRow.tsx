@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
+
+import { handleChoiceGroupKeyDown } from './choice-group-keys';
 
 interface SettingGroupProps {
   title: string;
@@ -73,7 +76,7 @@ interface SegmentedProps<Value extends string> {
 /** A small set of choices shown side by side, like Light / Dark / System. */
 export function Segmented<Value extends string>({ label, value, options, onChange }: SegmentedProps<Value>) {
   return (
-    <div className="segmented-control is-large" role="radiogroup" aria-label={label}>
+    <div className="segmented-control is-large" role="radiogroup" aria-label={label} onKeyDown={handleChoiceGroupKeyDown}>
       {options.map((option) => (
         <SegmentedButton key={option.value} option={option} isActive={option.value === value} onChange={onChange} />
       ))}
@@ -93,8 +96,45 @@ function SegmentedButton<Value extends string>({ option, isActive, onChange }: S
   }
 
   return (
-    <button role="radio" aria-checked={isActive} className={isActive ? 'is-active' : undefined} onClick={handleClick}>
+    <button role="radio" aria-checked={isActive} tabIndex={isActive ? 0 : -1} className={isActive ? 'is-active' : undefined} onClick={handleClick}>
       {option.label}
     </button>
+  );
+}
+
+interface NumberInputProps {
+  value: number;
+  minimum: number;
+  maximum: number;
+  step?: number;
+  onChange: (value: number) => void;
+}
+
+/** A number field that saves only values in range. Leaving it shows the saved value again. */
+export function NumberInput({ value, minimum, maximum, step, onChange }: NumberInputProps) {
+  // What's typed, kept while it's out of range (like "1" on the way to "14").
+  const [draft, setDraft] = useState<string | null>(null);
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    setDraft(event.target.value);
+    const { valueAsNumber } = event.target;
+    if (valueAsNumber >= minimum && valueAsNumber <= maximum) onChange(valueAsNumber);
+  }
+
+  function handleBlur() {
+    setDraft(null);
+  }
+
+  return (
+    <input
+      className="number-input"
+      type="number"
+      min={minimum}
+      max={maximum}
+      step={step}
+      value={draft ?? value}
+      onChange={handleChange}
+      onBlur={handleBlur}
+    />
   );
 }

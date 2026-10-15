@@ -11,6 +11,7 @@
     "core:window:allow-destroy",
     "core:window:allow-set-focus",
     "core:webview:allow-set-webview-zoom",
+    "core:webview:allow-set-webview-focus",
     "dialog:default",
     "opener:default"
   ]

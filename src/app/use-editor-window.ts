@@ -7,6 +7,7 @@ import {
   confirmClose,
   handlePathRenamed,
   loadInitialDocument,
+  openFileInThisWindow,
 } from '../lib/documents/document-actions';
 import { useDocumentStore } from '../lib/documents/document-store';
 import { startDraftAutosave } from '../lib/documents/draft-autosave';
@@ -16,11 +17,14 @@ import { handleMenuAction } from '../lib/commands/menu-actions';
 import { handleFolderPathRenamed, openFolder } from '../lib/folders/folder-store';
 import { refreshFolderListings } from '../lib/folders/query-client';
 import { loadSettings } from '../lib/settings/settings-store';
+import { useOptionKeyShortcuts } from '../lib/shortcuts/use-option-key-shortcuts';
 import {
   handleCloseRequests,
   listenForFileDrops,
   listenForFolderOpened,
   listenForMenuActions,
+  listenForOpenInPane,
+  notifyPaneFocused,
   listenForPathRenamed,
   listenForWindowFocus,
   openDroppedPaths,
@@ -74,16 +78,31 @@ function handleFileDrop(paths: string[], position: DropPosition) {
   void openDroppedPaths(paths);
 }
 
+function handleOpenInPane(path: string) {
+  void openFileInThisWindow(path);
+}
+
+// In a split window, the pane with the keyboard focus gets the menu actions and shows its title.
+function handlePageFocus() {
+  void notifyPaneFocused();
+}
+
+function listenForPageFocus(): () => void {
+  window.addEventListener('focus', handlePageFocus);
+  return () => window.removeEventListener('focus', handlePageFocus);
+}
+
 function handleRename(rename: PathRenamed) {
   handlePathRenamed(rename);
   handleFolderPathRenamed(rename);
   void refreshFolderListings();
 }
 
-/** Connects the window to the native side: menu actions, close prompts, focus checks, file drops, renames and the title. */
+/** Connects the window to the native side: menu actions (and ⌥ shortcuts), close prompts, focus checks, file drops, renames and the title. */
 export function useWindowIntegration(): void {
   const path = useDocumentStore((state) => state.path);
   const isDirty = useDocumentStore((state) => state.isDirty);
+  useOptionKeyShortcuts();
 
   useEffect(() => listenForMenuActions(handleMenuActionEvent), []);
   useEffect(() => handleCloseRequests(confirmClose), []);
@@ -91,6 +110,8 @@ export function useWindowIntegration(): void {
   useEffect(() => listenForFileDrops(handleFileDrop), []);
   useEffect(() => listenForFolderOpened(openFolder), []);
   useEffect(() => listenForPathRenamed(handleRename), []);
+  useEffect(() => listenForOpenInPane(handleOpenInPane), []);
+  useEffect(() => listenForPageFocus(), []);
   useEffect(() => startDraftAutosave(), []);
   useEffect(() => {
     void setWindowTitle(`${getFileName(path)}${isDirty ? ' — Edited' : ''}`);

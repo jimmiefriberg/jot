@@ -158,8 +158,8 @@ input::placeholder {
   appearance: none;
   position: relative;
   flex: none;
-  width: 32px;
-  height: 19px;
+  width: 36px;
+  height: 22px;
   margin: 0;
   border-radius: 999px;
   background: var(--color-pressed);
@@ -171,8 +171,8 @@ input::placeholder {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
@@ -184,7 +184,7 @@ input::placeholder {
 }
 
 .switch:checked::after {
-  transform: translateX(13px);
+  transform: translateX(14px);
 }
 
 .switch:focus-visible {
@@ -222,6 +222,7 @@ input::placeholder {
 }
 
 .segmented-control.is-large button {
+  min-height: 28px;
   padding: 4px 14px;
   font-size: 12.5px;
 }
@@ -264,6 +265,20 @@ kbd {
 .formatted-view {
   position: absolute;
   inset: 0;
+}
+
+.document-area[data-side-by-side] .source-editor {
+  right: 50%;
+}
+
+.side-by-side-preview {
+  position: absolute;
+  inset: 0 0 0 50%;
+  border-left: 1px solid var(--color-border);
+}
+
+.side-by-side-preview .cm-editor {
+  height: 100%;
 }
 
 .formatted-view {
@@ -473,4 +488,26 @@ kbd {
   background: var(--color-surface);
   font-family: var(--font-editor);
   font-size: 12px;
+}
+
+/* Split view: each pane is its own page. The left pane draws the line and carries the draggable divider on its right edge
+   (it's always loaded when the split appears; a new right pane may not be listening yet). */
+
+.editor-window[data-pane='left'] {
+  border-right: 1px solid var(--color-border);
+}
+
+.pane-divider {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 50;
+}
+
+.pane-divider:hover,
+.pane-divider:active {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
 }

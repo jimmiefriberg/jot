@@ -97,8 +97,9 @@ export function deleteColumns(csv: CsvDocument, range: IndexRange): CsvDocument 
   return withRows(csv, rows);
 }
 
+/** Changes one cell. Only that row grows if it's short, so the other rows are written back exactly as they were. */
 export function setCell(csv: CsvDocument, rowIndex: number, columnIndex: number, value: string): CsvDocument {
-  const rows = normalizeRows(csv);
+  const rows = csv.rows.map((row) => [...row]);
   while (rows.length <= rowIndex) rows.push(new Array<string>(csv.columnCount).fill(''));
   const row = rows[rowIndex];
   while (row.length <= columnIndex) row.push('');
@@ -134,7 +135,8 @@ export function pasteRegion(csv: CsvDocument, rowIndex: number, columnIndex: num
       result = setCell(result, rowIndex + rowOffset, columnIndex + columnOffset, value);
     });
   });
-  return result;
+  // A paste that adds columns widens every row, like inserting a column does.
+  return result.columnCount > csv.columnCount ? withRows(result, normalizeRows(result)) : result;
 }
 
 /** Parses clipboard text into cells: tab-separated when it has tabs (spreadsheets), otherwise with the table's delimiter. */

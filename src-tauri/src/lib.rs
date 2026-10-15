@@ -2,9 +2,11 @@ mod files;
 mod folders;
 mod menu;
 mod migration;
+mod panes;
 mod recent;
 mod session;
 mod settings;
+mod tabs;
 mod windows;
 
 use std::path::PathBuf;
@@ -12,6 +14,7 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Manager, RunEvent, WindowEvent};
 
+use menu::MenuCommands;
 use recent::RecentItems;
 use windows::WindowRegistry;
 
@@ -45,11 +48,15 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(WindowRegistry::default())
         .manage(RecentItems::default())
+        .manage(MenuCommands::default())
         .menu(menu::build_menu)
         .on_menu_event(|app, event| menu::handle_menu_event(app, event.id().as_ref()))
         .on_window_event(|window, event| {
-            if let WindowEvent::Destroyed = event {
-                windows::handle_window_destroyed(window.app_handle(), window.label());
+            panes::handle_window_event(window, event);
+            match event {
+                WindowEvent::Destroyed => windows::handle_window_destroyed(window.app_handle(), window.label()),
+                WindowEvent::Focused(true) => windows::handle_window_focused(window.app_handle(), window.label()),
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -59,6 +66,7 @@ pub fn run() {
             files::save_image,
             settings::load_settings,
             settings::save_settings,
+            menu::get_menu_commands,
             folders::read_directory,
             folders::list_folder_files,
             folders::create_file,
@@ -74,6 +82,11 @@ pub fn run() {
             windows::open_new_document,
             windows::open_dropped_paths,
             windows::cancel_quit,
+            panes::answer_close_request,
+            panes::register_close_handler,
+            panes::pane_focused,
+            panes::set_pane_title,
+            panes::move_split_divider,
         ])
         .setup(|app| {
             migration::migrate_previous_app_data(app.handle());

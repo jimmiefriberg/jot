@@ -2,6 +2,11 @@ import { FONT_ROLE, fontFamilyFor } from './fonts';
 import type { Settings } from './settings-schema';
 import type { Theme } from './theme-presets';
 
+/** Sent on `window` when the theme's colours change, for things drawn in theme colours outside CSS (diagrams). */
+export const THEME_APPLIED_EVENT = 'jot:theme-applied';
+
+let appliedColorsKey = '';
+
 function toKebabCase(name: string): string {
   return name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
@@ -18,6 +23,13 @@ export function applyThemeToDocument(theme: Theme, settings: Settings, fontSize:
   root.style.setProperty('--line-height', String(settings.lineHeight));
   root.style.setProperty('--editor-maximum-width', `${settings.maximumLineWidth}ch`);
   root.dataset.textWidth = settings.maximumLineWidth > 0 ? 'limited' : 'full';
+  root.style.setProperty('--preview-maximum-width', settings.previewWidth > 0 ? `${settings.previewWidth}px` : '100%');
   root.style.colorScheme = theme.isDark ? 'dark' : 'light';
   root.dataset.theme = theme.isDark ? 'dark' : 'light';
+
+  const colorsKey = JSON.stringify(theme.colors);
+  if (colorsKey === appliedColorsKey) return;
+  const isFirstTheme = appliedColorsKey === '';
+  appliedColorsKey = colorsKey;
+  if (!isFirstTheme) window.dispatchEvent(new Event(THEME_APPLIED_EVENT));
 }

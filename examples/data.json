@@ -1,0 +1,12 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "vite", "build": "vite build" },
+  "dependencies": { "react": "^18.3.1", "zustand": "^5.0.0" },
+  "authors": [
+    { "name": "Ada", "active": true, "roles": ["admin", "editor"] },
+    { "name": "Grace", "active": false, "roles": [] }
+  ],
+  "limits": { "maximumUploadSize": 10485760, "timeout": null, "ratio": 0.75 }
+}

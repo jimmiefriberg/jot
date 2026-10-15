@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import type { StateCommand } from '@codemirror/state';
 
-import { insertLink, makeTitleCase, sortLinesAscending, toggleBold } from './text-commands';
+import { insertLink, makeTitleCase, sortLinesAscending, toggleBold, toggleTask } from './text-commands';
 
 /** Runs a command on a document with a selection and returns the new text and selected text. */
 function run(command: StateCommand, doc: string, from: number, to = from) {
@@ -34,4 +34,15 @@ test('capitalizes words', () => {
 
 test('sorts the whole document with numbers in natural order', () => {
   expect(run(sortLinesAscending, 'item 10\nitem 2\nApple', 0).text).toBe('Apple\nitem 2\nitem 10');
+});
+
+test('toggle task makes a task, adds a checkbox to a list item, or ticks a task', () => {
+  expect(run(toggleTask, 'Buy milk', 0)).toEqual({ text: '- [ ] Buy milk', selected: '' });
+  expect(run(toggleTask, '  * Buy milk', 5).text).toBe('  * [ ] Buy milk');
+  expect(run(toggleTask, '- [ ] Buy milk', 8).text).toBe('- [x] Buy milk');
+  expect(run(toggleTask, '1. [x] Buy milk', 0).text).toBe('1. [ ] Buy milk');
+});
+
+test('toggle task works on every selected line', () => {
+  expect(run(toggleTask, 'one\ntwo', 0, 7).text).toBe('- [ ] one\n- [ ] two');
 });

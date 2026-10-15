@@ -20,6 +20,7 @@ import {
 } from '@codemirror/commands';
 import { json, jsonLanguage } from '@codemirror/lang-json';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
 import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language';
@@ -34,7 +35,7 @@ import {
   selectNextOccurrence,
   selectSelectionMatches,
 } from '@codemirror/search';
-import { Compartment, EditorSelection, EditorState, Text } from '@codemirror/state';
+import { Compartment, EditorSelection, EditorState, Prec, Text } from '@codemirror/state';
 import type { ChangeSpec, Extension } from '@codemirror/state';
 import {
   EditorView,
@@ -56,10 +57,22 @@ import type { TextChange } from '../documents/text-change';
 import type { FileKind } from '../documents/file-kind';
 import { useDocumentStore } from '../documents/document-store';
 import { editorTheme } from './editor-theme';
-import { insertLineAbove, insertLineBelow } from './line-commands';
+import { copyLineWhenNothingSelected, cutLineWhenNothingSelected, insertLineAbove, insertLineBelow } from './line-commands';
 import { livePreview } from './live-preview/live-preview';
 import { livePreviewEnvironment } from './live-preview/live-preview-environment';
 import { markdownImagePaste } from './markdown-images';
+import { markdownSyntaxExtensions } from './markdown-syntax';
+import {
+  deleteTableColumn,
+  deleteTableRow,
+  formatAllTables,
+  insertTableColumnLeft,
+  insertTableColumnRight,
+  insertTableRowAbove,
+  insertTableRowBelow,
+  nextTableCell,
+  previousTableCell,
+} from './table-commands';
 import {
   insertLink,
   makeLowerCase,
@@ -71,6 +84,7 @@ import {
   toggleBold,
   toggleInlineCode,
   toggleItalic,
+  toggleTask,
 } from './text-commands';
 import { focusMode, typewriterScrolling } from './writing-modes';
 
@@ -110,7 +124,11 @@ function languageExtension(kind: FileKind): Extension {
     autocorrect: 'off',
     autocapitalize: 'off',
   });
-  if (kind === FILE_KIND.markdown) return [contentAttributes, markdown({ base: markdownLanguage }), markdownImagePaste];
+  if (kind === FILE_KIND.markdown) {
+    // Fenced code is highlighted in its own language; the grammars load the first time a language is used.
+    const markdownSupport = markdown({ base: markdownLanguage, codeLanguages: languages, extensions: markdownSyntaxExtensions });
+    return [contentAttributes, markdownSupport, markdownImagePaste, markdownTableKeymap];
+  }
   if (kind === FILE_KIND.json) {
     return [contentAttributes, json(), jsonLanguage.data.of({ commentTokens: { line: '//' } }), foldGutter(), closeBrackets()];
   }
@@ -118,6 +136,14 @@ function languageExtension(kind: FileKind): Extension {
   if (kind === FILE_KIND.xml) return [contentAttributes, xml(), foldGutter()];
   return contentAttributes;
 }
+
+// Tab and ⇧Tab move between table cells; outside a table they fall through to indenting.
+const markdownTableKeymap = Prec.high(
+  keymap.of([
+    { key: 'Tab', run: nextTableCell },
+    { key: 'Shift-Tab', run: previousTableCell },
+  ]),
+);
 
 function lineNumbersExtension(options: EditorOptions): Extension {
   return options.showLineNumbers && !options.isLivePreview ? lineNumbers() : [];
@@ -150,11 +176,14 @@ function writingModesExtension(options: EditorOptions): Extension {
 
 // The native menu owns most shortcuts on macOS; this keymap covers the same keys when there is no menu (Linux, browser).
 const editorKeymap = keymap.of([
+  { key: 'Mod-c', run: copyLineWhenNothingSelected },
+  { key: 'Mod-x', run: cutLineWhenNothingSelected },
   { key: 'Mod-Enter', run: insertLineBelow },
   { key: 'Mod-Shift-Enter', run: insertLineAbove },
   { key: 'Mod-l', run: selectLine, preventDefault: true },
   { key: 'Mod-Shift-l', run: selectSelectionMatches, preventDefault: true },
   { key: 'Ctrl-g', run: gotoLine, preventDefault: true },
+  { key: 'Mod-Shift-t', run: toggleTask, preventDefault: true },
   ...closeBracketsKeymap,
   ...defaultKeymap,
   ...searchKeymap,
@@ -230,6 +259,50 @@ export function createEditor(parent: HTMLElement, text: string, lineSeparator: s
   return editorView;
 }
 
+/** A read-only Markdown preview of this window's document, shown beside the plain editor. Ticked checkboxes edit the document. */
+export function createSideBySidePreview(parent: HTMLElement): EditorView {
+  const forwardTaskToggles = EditorView.updateListener.of((update) => {
+    if (!update.transactions.some((transaction) => transaction.isUserEvent('input.toggle-task'))) return;
+    editorView?.dispatch({ changes: update.changes, userEvent: 'input.toggle-task' });
+  });
+  const state = EditorState.create({
+    doc: editorView?.state.doc ?? '',
+    extensions: [
+      drawSelection(),
+      editorTheme,
+      languageExtension(FILE_KIND.markdown),
+      EditorView.lineWrapping,
+      livePreview(livePreviewEnvironment),
+      forwardTaskToggles,
+    ],
+  });
+  return new EditorView({ state, parent });
+}
+
+/** Brings a side-by-side preview's text up to date with the document, changing only the part that differs. */
+export function syncSideBySidePreview(preview: EditorView): void {
+  if (!editorView || preview.state.doc.eq(editorView.state.doc)) return;
+  const change = createMinimalChange(preview.state.doc.toString(), getViewText());
+  if (change) preview.dispatch({ changes: { from: change.from, to: change.to, insert: change.insert } });
+}
+
+/** How far a view is scrolled, from the top of its document. */
+function scrolledHeight(view: EditorView): number {
+  return view.scrollDOM.getBoundingClientRect().top - view.documentTop;
+}
+
+/** Scrolls a side-by-side preview so it shows the same line as the top of the editor. */
+export function syncSideBySideScroll(preview: EditorView): void {
+  if (!editorView) return;
+  const editorHeight = scrolledHeight(editorView);
+  const editorBlock = editorView.lineBlockAtHeight(editorHeight);
+  const lineNumber = Math.min(editorView.state.doc.lineAt(editorBlock.from).number, preview.state.doc.lines);
+  const previewBlock = preview.lineBlockAt(preview.state.doc.line(lineNumber).from);
+  const progressInBlock = editorBlock.height > 0 ? (editorHeight - editorBlock.top) / editorBlock.height : 0;
+  const previewHeight = previewBlock.top + progressInBlock * previewBlock.height;
+  preview.scrollDOM.scrollTop += previewHeight - scrolledHeight(preview);
+}
+
 export function destroyEditor(): void {
   editorView?.destroy();
   editorView = null;
@@ -296,11 +369,19 @@ export function applyTextChanges(changes: TextChange[], userEvent = 'input'): vo
   editorView.dispatch({ changes: changes.map(toChangeSpec), userEvent });
 }
 
-/** Remembers the current text as what's on disk, so the document is clean until it changes again. */
-export function markDocumentSaved(): void {
+/** The document as it is now, to hand to `markDocumentSaved` once that text has been written. */
+export function getDocumentSnapshot(): Text | null {
+  return editorView?.state.doc ?? null;
+}
+
+/**
+ * Remembers `writtenDocument` (by default the current text) as what's on disk.
+ * Edits made while it was being written keep the document dirty.
+ */
+export function markDocumentSaved(writtenDocument?: Text | null): void {
   if (!editorView) return;
-  savedDocument = editorView.state.doc;
-  useDocumentStore.setState({ isDirty: false });
+  savedDocument = writtenDocument ?? editorView.state.doc;
+  useDocumentStore.setState({ isDirty: !editorView.state.doc.eq(savedDocument) });
 }
 
 export function focusEditor(): void {
@@ -365,12 +446,21 @@ const EDITOR_COMMANDS: Record<string, Command> = {
   'format.italic': toggleItalic,
   'format.inlineCode': toggleInlineCode,
   'format.link': insertLink,
+  'format.toggleTask': toggleTask,
   'format.upperCase': makeUpperCase,
   'format.lowerCase': makeLowerCase,
   'format.titleCase': makeTitleCase,
   'format.sortAscending': sortLinesAscending,
   'format.sortDescending': sortLinesDescending,
   'format.removeTrailingWhitespace': removeTrailingWhitespace,
+  'format.tables': formatAllTables,
+  // Markdown tables; the CSV table handles these itself.
+  'table.insertRowAbove': insertTableRowAbove,
+  'table.insertRowBelow': insertTableRowBelow,
+  'table.insertColumnLeft': insertTableColumnLeft,
+  'table.insertColumnRight': insertTableColumnRight,
+  'table.deleteRows': deleteTableRow,
+  'table.deleteColumns': deleteTableColumn,
 };
 
 /** Runs a menu command in the editor. Returns false when the editor doesn't know the command. */

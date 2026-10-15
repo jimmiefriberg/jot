@@ -1,0 +1,25 @@
+# A typical config file
+name: jot-example
+version: 1.2.0
+server:
+  host: localhost
+  port: 8080
+  tls: false
+features:
+  - live-preview
+  - split-view
+  - tabs
+database:
+  url: postgres://localhost/example
+  pool:
+    minimum: 2
+    maximum: 10
+description: |
+  A multi-line string
+  kept as written.
+anchors:
+  defaults: &defaults
+    retries: 3
+  production:
+    <<: *defaults
+    retries: 5

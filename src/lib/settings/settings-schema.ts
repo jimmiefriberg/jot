@@ -29,6 +29,8 @@ export interface Settings {
   isFocusMode: boolean;
   /** Widest text column in Plain view, in characters. 0 means as wide as the window. */
   maximumLineWidth: number;
+  /** Widest Markdown column in Formatted view, in pixels. 0 means as wide as the window. */
+  previewWidth: number;
   trimTrailingWhitespace: boolean;
   insertFinalNewline: boolean;
   defaultViewMode: Record<FormattableKind, ViewMode>;
@@ -36,11 +38,22 @@ export interface Settings {
   sidebarSide: SidebarSide;
   showHiddenFiles: boolean;
   reopenWindowsOnLaunch: boolean;
+  /** Menu shortcuts changed in Settings, by command id (like "view.wordWrap"). An empty string means no shortcut. */
+  shortcuts: Record<string, string>;
 }
 
 export const MINIMUM_FONT_SIZE = 9;
 export const MAXIMUM_FONT_SIZE = 40;
 export const MAXIMUM_LINE_WIDTH = 200;
+export const MAXIMUM_PREVIEW_WIDTH = 4000;
+
+/** Allowed range of each number typed into Settings. */
+export const NUMBER_SETTING_RANGE = {
+  fontSize: { minimum: MINIMUM_FONT_SIZE, maximum: MAXIMUM_FONT_SIZE },
+  lineHeight: { minimum: 1, maximum: 3 },
+  tabSize: { minimum: 1, maximum: 8 },
+} as const;
+export type NumberSettingKey = keyof typeof NUMBER_SETTING_RANGE;
 
 export const DEFAULT_SETTINGS: Settings = {
   appearance: APPEARANCE.system,
@@ -59,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   isTypewriterScrolling: false,
   isFocusMode: false,
   maximumLineWidth: 0,
+  previewWidth: 1000,
   trimTrailingWhitespace: false,
   insertFinalNewline: false,
   defaultViewMode: {
@@ -72,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarSide: SIDEBAR_SIDE.left,
   showHiddenFiles: false,
   reopenWindowsOnLaunch: true,
+  shortcuts: {},
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -92,6 +107,13 @@ function readNumber(source: Record<string, unknown>, key: string, fallback: numb
 function readBoolean(source: Record<string, unknown>, key: string, fallback: boolean): boolean {
   const value = source[key];
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function readStringRecord(source: Record<string, unknown>, key: string): Record<string, string> {
+  const value = source[key];
+  if (!isRecord(value)) return {};
+  const entries = Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
+  return Object.fromEntries(entries);
 }
 
 function readOneOf<T extends string>(source: Record<string, unknown>, key: string, options: readonly T[], fallback: T): T {
@@ -145,9 +167,9 @@ export function mergeSettings(stored: unknown): Settings {
     customThemes,
     editorFont: readFontName(stored, 'editorFont', 'editorFontFamily', FONT_ROLE.editor, DEFAULT_SETTINGS.editorFont),
     previewFont: readFontName(stored, 'previewFont', 'previewFontFamily', FONT_ROLE.preview, DEFAULT_SETTINGS.previewFont),
-    fontSize: readNumber(stored, 'fontSize', DEFAULT_SETTINGS.fontSize, MINIMUM_FONT_SIZE, MAXIMUM_FONT_SIZE),
-    lineHeight: readNumber(stored, 'lineHeight', DEFAULT_SETTINGS.lineHeight, 1, 3),
-    tabSize: readNumber(stored, 'tabSize', DEFAULT_SETTINGS.tabSize, 1, 8),
+    fontSize: readNumber(stored, 'fontSize', DEFAULT_SETTINGS.fontSize, NUMBER_SETTING_RANGE.fontSize.minimum, NUMBER_SETTING_RANGE.fontSize.maximum),
+    lineHeight: readNumber(stored, 'lineHeight', DEFAULT_SETTINGS.lineHeight, NUMBER_SETTING_RANGE.lineHeight.minimum, NUMBER_SETTING_RANGE.lineHeight.maximum),
+    tabSize: readNumber(stored, 'tabSize', DEFAULT_SETTINGS.tabSize, NUMBER_SETTING_RANGE.tabSize.minimum, NUMBER_SETTING_RANGE.tabSize.maximum),
     isWordWrapEnabled: readBoolean(stored, 'isWordWrapEnabled', DEFAULT_SETTINGS.isWordWrapEnabled),
     showLineNumbers: readBoolean(stored, 'showLineNumbers', DEFAULT_SETTINGS.showLineNumbers),
     highlightActiveLine: readBoolean(stored, 'highlightActiveLine', DEFAULT_SETTINGS.highlightActiveLine),
@@ -155,6 +177,7 @@ export function mergeSettings(stored: unknown): Settings {
     isTypewriterScrolling: readBoolean(stored, 'isTypewriterScrolling', DEFAULT_SETTINGS.isTypewriterScrolling),
     isFocusMode: readBoolean(stored, 'isFocusMode', DEFAULT_SETTINGS.isFocusMode),
     maximumLineWidth: readNumber(stored, 'maximumLineWidth', DEFAULT_SETTINGS.maximumLineWidth, 0, MAXIMUM_LINE_WIDTH),
+    previewWidth: readNumber(stored, 'previewWidth', DEFAULT_SETTINGS.previewWidth, 0, MAXIMUM_PREVIEW_WIDTH),
     trimTrailingWhitespace: readBoolean(stored, 'trimTrailingWhitespace', DEFAULT_SETTINGS.trimTrailingWhitespace),
     insertFinalNewline: readBoolean(stored, 'insertFinalNewline', DEFAULT_SETTINGS.insertFinalNewline),
     defaultViewMode: {
@@ -168,6 +191,7 @@ export function mergeSettings(stored: unknown): Settings {
     sidebarSide: readOneOf(stored, 'sidebarSide', Object.values(SIDEBAR_SIDE), DEFAULT_SETTINGS.sidebarSide),
     showHiddenFiles: readBoolean(stored, 'showHiddenFiles', DEFAULT_SETTINGS.showHiddenFiles),
     reopenWindowsOnLaunch: readBoolean(stored, 'reopenWindowsOnLaunch', DEFAULT_SETTINGS.reopenWindowsOnLaunch),
+    shortcuts: readStringRecord(stored, 'shortcuts'),
   };
 }
 

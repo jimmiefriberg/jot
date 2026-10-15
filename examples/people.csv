@@ -1,0 +1,9 @@
+id,name,email,city,joined,score
+1,Ada Lovelace,ada@example.com,London,1843-01-10,98.5
+2,Grace Hopper,grace@example.com,New York,1944-06-01,97
+3,Alan Turing,alan@example.com,Manchester,1936-11-12,99.1
+4,Katherine Johnson,katherine@example.com,Hampton,1953-05-20,96.4
+5,"Hopper, Grace (alias)",,"Arlington, VA",1986-08-14,
+6,Linus Torvalds,linus@example.com,Portland,1991-08-25,91
+7,Margaret Hamilton,margaret@example.com,Cambridge,1965-03-03,98
+8,"Quote ""inside"" a cell",quote@example.com,Somewhere,2000-01-01,50

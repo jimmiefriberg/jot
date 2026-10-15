@@ -1,13 +1,24 @@
-/* Markdown live preview: the editor itself, styled as a document. */
+/* Markdown live preview: the editor itself, styled as a document, with spacing modelled on GitHub's. */
+
+.cm-live-preview {
+  /* Width of a list marker; nested lists step in by the same amount. */
+  --lp-indent: 1.75em;
+  --lp-code-background: var(--color-surface);
+  --lp-highlight: rgb(255 212 0 / 0.38);
+}
+
+:root[data-theme='dark'] .cm-live-preview {
+  --lp-highlight: rgb(255 212 0 / 0.28);
+}
 
 .cm-live-preview .cm-scroller {
   font-family: var(--font-preview);
 }
 
 .cm-live-preview .cm-content {
-  flex: 0 1 760px;
+  flex: 0 1 var(--preview-maximum-width, 1000px);
   margin: 0 auto;
-  padding: 28px 32px 40vh;
+  padding: 32px 32px 40vh;
   font-size: calc(var(--font-size) + 2px);
 }
 
@@ -15,67 +26,208 @@
   padding: 0 2px;
 }
 
-/* Headings: the line class sets the size, so the syntax colouring must not scale it again. */
-.cm-live-preview .cm-lp-heading {
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--color-heading);
+/* Markup outside the cursor: kept in the text (so lines wrap normally) but takes no space.
+   It must win over size rules for whatever contains it (headings, code), hence !important. */
+.cm-live-preview .cm-lp-hidden {
+  font-size: 0 !important;
+  letter-spacing: 0 !important;
+  padding: 0 !important;
+  /* Hidden URLs mustn't offer line breaks (after "/"), or the punctuation after a link could wrap on its own. */
+  white-space: nowrap;
 }
 
+/* Blank lines separate blocks; at full height they leave gaps that feel too loose for prose. */
+.cm-live-preview .cm-line.cm-lp-blank {
+  line-height: 1;
+}
+
+/* Headings */
+
+.cm-live-preview .cm-lp-heading {
+  font-weight: 650;
+  line-height: 1.25;
+  padding-top: 0.6em;
+  padding-bottom: 0.2em;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+/* The line class sets the size, so the syntax colouring mustn't scale it again. */
 .cm-live-preview .cm-lp-heading * {
   font-size: inherit;
 }
 
+.cm-live-preview .cm-lp-h1,
+.cm-live-preview .cm-lp-h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-subtle-border);
+}
+
 .cm-live-preview .cm-lp-h1 {
-  font-size: 1.9em;
-  padding-top: 0.5em;
+  font-size: 2em;
+  letter-spacing: -0.02em;
 }
 
 .cm-live-preview .cm-lp-h2 {
-  font-size: 1.45em;
-  padding-top: 0.45em;
+  font-size: 1.5em;
 }
 
 .cm-live-preview .cm-lp-h3 {
-  font-size: 1.2em;
-  padding-top: 0.35em;
+  font-size: 1.25em;
 }
 
-.cm-live-preview .cm-lp-h4,
-.cm-live-preview .cm-lp-h5,
-.cm-live-preview .cm-lp-h6 {
-  font-size: 1.05em;
+.cm-live-preview .cm-lp-h4 {
+  font-size: 1em;
 }
+
+.cm-live-preview .cm-lp-h5 {
+  font-size: 0.875em;
+}
+
+.cm-live-preview .cm-lp-h6 {
+  font-size: 0.85em;
+  color: var(--color-muted-foreground);
+}
+
+/* Inline formatting */
 
 .cm-lp-strong {
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .cm-lp-em {
   font-style: italic;
 }
 
-.cm-lp-strike {
+.cm-lp-strike,
+.cm-lp-tag-del,
+.cm-lp-tag-s {
   text-decoration: line-through;
+}
+
+.cm-lp-sup,
+.cm-lp-tag-sup {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.cm-lp-tag-sub {
+  font-size: 0.75em;
+  vertical-align: sub;
+  line-height: 0;
+}
+
+.cm-lp-tag-u,
+.cm-lp-tag-ins {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cm-lp-tag-b,
+.cm-lp-tag-strong {
+  font-weight: 650;
+}
+
+.cm-lp-tag-i,
+.cm-lp-tag-em {
+  font-style: italic;
+}
+
+.cm-lp-highlight,
+.cm-lp-tag-mark {
+  background: var(--lp-highlight);
+  border-radius: 3px;
+  padding: 0.05em 0.1em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.cm-lp-tag-kbd {
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+  padding: 0.12em 0.42em;
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--color-control);
+  white-space: nowrap;
 }
 
 .cm-live-preview .cm-lp-code {
   font-family: var(--font-editor);
-  font-size: 0.88em;
-  background: var(--color-surface);
-  border-radius: 4px;
-  padding: 0.1em 0.3em;
+  font-size: 0.85em;
+  background: var(--lp-code-background);
+  border-radius: 6px;
+  padding: 0.15em 0.4em;
 }
 
 .cm-live-preview .cm-lp-link {
   color: var(--color-link);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-link) 40%, transparent);
-  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 35%, transparent);
+  text-underline-offset: 3px;
 }
 
 .cm-live-preview .cm-lp-link * {
   color: inherit;
+}
+
+.cm-lp-emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-style: normal;
+}
+
+.cm-lp-html-tag,
+.cm-lp-comment {
+  color: var(--color-muted-foreground);
+  font-family: var(--font-editor);
+  font-size: 0.8em;
+}
+
+.cm-lp-comment {
+  font-style: italic;
+}
+
+.cm-live-preview .cm-lp-html-block {
+  font-family: var(--font-editor);
+  font-size: 0.82em;
+  color: var(--color-muted-foreground);
+}
+
+/* Lists: a fixed-width marker and a hanging indent, so wrapped lines line up with the text. */
+
+.cm-live-preview .cm-line.cm-lp-list-item,
+.cm-live-preview .cm-line.cm-lp-list-continuation {
+  padding-left: calc((var(--lp-depth, 0) + 1) * var(--lp-indent));
+}
+
+.cm-live-preview .cm-line.cm-lp-list-item {
+  text-indent: calc(-1 * var(--lp-indent));
+  padding-top: 0.12em;
+}
+
+.cm-lp-list-marker {
+  display: inline-block;
+  width: var(--lp-indent);
+  text-indent: 0;
+  color: var(--color-muted-foreground);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cm-lp-list-marker.is-bullet {
+  padding-left: 0.35em;
+}
+
+.cm-lp-list-marker.is-ordered {
+  padding-right: 0.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cm-lp-list-marker.is-task {
+  padding-left: 0.1em;
 }
 
 .cm-lp-bullet {
@@ -110,49 +262,105 @@
   background: var(--color-accent);
 }
 
-/* The tick, drawn with two borders. */
+/* The tick: an SVG shape used as a mask, centred in the box and coloured like the background. */
 .cm-lp-checkbox:checked::after {
   content: '';
   position: absolute;
-  left: 0.28em;
-  top: 0.1em;
-  width: 0.26em;
-  height: 0.5em;
-  border: solid var(--color-background);
-  border-width: 0 0.12em 0.12em 0;
-  transform: rotate(45deg);
+  inset: 0;
+  background: var(--color-background);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4 6.6 11.3 12.4 4.9' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 82% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4 6.6 11.3 12.4 4.9' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 82% no-repeat;
 }
 
 .cm-live-preview .cm-lp-task-done {
   color: var(--color-muted-foreground);
   text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--color-muted-foreground) 60%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
 }
 
+/* Quotes and GitHub alerts */
+
 .cm-live-preview .cm-lp-quote {
-  border-left: 3px solid var(--color-accent-strong);
-  padding-left: 16px;
+  border-left: 3px solid color-mix(in srgb, var(--color-muted-foreground) 35%, transparent);
+  padding-left: 1em;
   color: var(--color-muted-foreground);
 }
 
+.cm-live-preview .cm-lp-alert {
+  --lp-alert-color: var(--color-link);
+  border-left: 3px solid var(--lp-alert-color);
+  padding-left: 1em;
+  padding-right: 1em;
+  background: color-mix(in srgb, var(--lp-alert-color) 6%, transparent);
+}
+
+.cm-live-preview .cm-lp-alert-first {
+  padding-top: 0.45em;
+  border-top-right-radius: 8px;
+}
+
+.cm-live-preview .cm-lp-alert-last {
+  padding-bottom: 0.45em;
+  border-bottom-right-radius: 8px;
+}
+
+.cm-live-preview .cm-lp-alert-tip {
+  --lp-alert-color: var(--color-string);
+}
+
+.cm-live-preview .cm-lp-alert-important {
+  --lp-alert-color: var(--color-keyword);
+}
+
+.cm-live-preview .cm-lp-alert-warning {
+  --lp-alert-color: var(--color-number);
+}
+
+.cm-live-preview .cm-lp-alert-caution {
+  --lp-alert-color: var(--color-danger);
+}
+
+.cm-lp-alert-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  color: var(--lp-alert-color);
+  font-weight: 600;
+}
+
+.cm-lp-alert-title svg {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Code blocks */
+
 .cm-live-preview .cm-lp-codeblock {
+  position: relative;
   font-family: var(--font-editor);
-  font-size: 0.86em;
-  background: var(--color-surface);
+  font-size: 0.85em;
+  line-height: 1.5;
+  background: var(--lp-code-background);
   padding-left: 16px;
   padding-right: 16px;
 }
 
 .cm-live-preview .cm-lp-fence {
   color: var(--color-muted-foreground);
-  font-size: 0.75em;
 }
 
-/* Fence lines outside the cursor shrink to the code block's rounded edges. */
+/* Fence lines outside the cursor shrink to the code block's rounded top and bottom edges. */
 .cm-live-preview .cm-lp-fence-hidden {
   font-size: 0;
   line-height: 0;
-  height: 10px;
+  height: 12px;
 }
 
 .cm-live-preview .cm-lp-fence-open {
@@ -163,28 +371,179 @@
   border-radius: 0 0 8px 8px;
 }
 
-.cm-live-preview .cm-lp-table-source {
-  font-family: var(--font-editor);
-  font-size: 0.88em;
+/* Language name and copy button in the code block's top-right corner. */
+.cm-lp-code-toolbar {
+  position: absolute;
+  top: -6px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 20px;
+  color: var(--color-muted-foreground);
+  user-select: none;
+  -webkit-user-select: none;
 }
+
+.cm-lp-code-language {
+  text-transform: lowercase;
+  opacity: 0.8;
+}
+
+.cm-lp-code-copy {
+  height: 20px;
+  padding: 0 7px;
+  font-size: 11px;
+  line-height: 18px;
+  border-radius: 5px;
+  background: var(--color-background);
+  opacity: 0.6;
+}
+
+.cm-lp-code-copy:hover {
+  opacity: 1;
+}
+
+.cm-live-preview .cm-lp-table-source,
+.cm-live-preview .cm-lp-math-source-line {
+  font-family: var(--font-editor);
+  font-size: 0.85em;
+}
+
+.cm-live-preview .cm-lp-link-definition {
+  font-family: var(--font-editor);
+  font-size: 0.82em;
+  color: var(--color-muted-foreground);
+}
+
+/* Front matter: a quiet metadata block at the top of the note. */
+.cm-live-preview .cm-lp-frontmatter {
+  font-family: var(--font-editor);
+  font-size: 0.82em;
+  line-height: 1.55;
+  color: var(--color-muted-foreground);
+  background: var(--lp-code-background);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Front matter is plain text: no heading, link or list colouring from the Markdown parser. */
+.cm-live-preview .cm-lp-frontmatter * {
+  color: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  text-decoration: none;
+}
+
+.cm-live-preview .cm-lp-frontmatter-first {
+  padding-top: 8px;
+  border-radius: 8px 8px 0 0;
+}
+
+.cm-live-preview .cm-lp-frontmatter-last {
+  padding-bottom: 8px;
+  border-radius: 0 0 8px 8px;
+}
+
+.cm-live-preview .cm-lp-frontmatter-first.cm-lp-frontmatter-last {
+  border-radius: 8px;
+}
+
+/* Footnotes */
+
+.cm-lp-footnote-ref {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: super;
+  color: var(--color-link);
+  padding: 0 0.1em;
+}
+
+.cm-live-preview .cm-lp-footnote-source {
+  color: var(--color-link);
+}
+
+.cm-live-preview .cm-lp-footnote-definition {
+  font-size: 0.875em;
+  color: var(--color-muted-foreground);
+}
+
+.cm-lp-footnote-label {
+  display: inline-block;
+  min-width: 1.6em;
+  color: var(--color-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Math (KaTeX) */
+
+.cm-lp-math.is-unrendered,
+.cm-lp-math-block.is-unrendered,
+.cm-live-preview .cm-lp-math-source {
+  font-family: var(--font-editor);
+  font-size: 0.85em;
+}
+
+.cm-lp-math-block {
+  padding: 0.6em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* Mermaid diagrams */
+
+.cm-lp-mermaid {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  overflow-x: auto;
+}
+
+.cm-lp-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.cm-lp-mermaid.is-loading,
+.cm-lp-mermaid.is-error {
+  justify-content: flex-start;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--lp-code-background);
+  color: var(--color-muted-foreground);
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+}
+
+.cm-lp-mermaid.is-error {
+  color: var(--color-danger);
+  white-space: pre-wrap;
+}
+
+/* Rules, images and tables */
 
 .cm-lp-rule {
   display: inline-block;
   width: 100%;
+  height: 2px;
   vertical-align: middle;
-  border-top: 1px solid var(--color-border);
+  border-radius: 1px;
+  background: var(--color-border);
 }
 
 .cm-lp-image {
   display: inline-block;
   max-width: 100%;
   max-height: 420px;
-  border-radius: 6px;
+  border-radius: 8px;
   vertical-align: bottom;
 }
 
 .cm-lp-table {
-  padding: 6px 0;
+  padding: 8px 0;
   overflow-x: auto;
 }
 
@@ -199,7 +558,7 @@
 .cm-lp-table th,
 .cm-lp-table td {
   border-bottom: 1px solid var(--color-border);
-  padding: 6px 14px;
+  padding: 6px 13px;
   text-align: left;
 }
 
@@ -213,6 +572,38 @@
 }
 
 .cm-lp-table th {
+  position: relative;
   background: var(--color-surface);
   font-weight: 600;
+}
+
+/* Long words wrap once a column has been dragged narrower than them. */
+.cm-lp-table table[style*='fixed'] :is(th, td) {
+  overflow-wrap: anywhere;
+}
+
+.cm-lp-column-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+}
+
+.cm-lp-column-resizer:hover {
+  background: linear-gradient(var(--color-accent), var(--color-accent)) center / 2px 100% no-repeat;
+}
+
+.cm-lp-table tbody tr:nth-child(2n) td {
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+}
+
+.cm-lp-table code {
+  font-family: var(--font-editor);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: var(--lp-code-background);
 }

@@ -1,0 +1,6 @@
+Plain text notes.
+
+Try: ⌘C on a line with nothing selected copies the whole line.
+Try: ⌥Z toggles word wrap. This line is deliberately long so that you can see word wrap turning on and off without having to resize the window at all.
+Try: ⌘L selects a line, ⌥↑/⌥↓ moves it, ⇧⌥↓ duplicates it.
+    Trailing spaces on this line →   

@@ -69,6 +69,12 @@ const ICON_SHAPES = {
     </>
   ),
   text: <path d="M3 4.25V3h10v1.25M8 3v10M6 13h4" />,
+  keyboard: (
+    <>
+      <rect x="1.75" y="4" width="12.5" height="8" rx="1.5" />
+      <path d="M4.5 6.5h.01M6.75 6.5h.01M9.25 6.5h.01M11.5 6.5h.01M5.5 9.5h5" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICON_SHAPES;

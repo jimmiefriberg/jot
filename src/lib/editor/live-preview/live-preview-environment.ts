@@ -37,9 +37,17 @@ function jumpToHeading(anchor: string, view: EditorView) {
   view.focus();
 }
 
+/** Bare `www.` addresses and email addresses (which GitHub links too) as openable URLs. */
+function withScheme(url: string): string {
+  if (/^www\./i.test(url)) return `https://${url}`;
+  if (!hasUrlScheme(url) && /^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(url)) return `mailto:${url}`;
+  return url;
+}
+
 /** Web and mail links open in the browser, `#heading` links jump within the note, and relative links open files in this app. */
-function openLink(url: string, view: EditorView): void {
+function openLink(rawUrl: string, view: EditorView): void {
   const { path } = useDocumentStore.getState();
+  const url = withScheme(rawUrl);
   if (isExternalLink(url)) {
     void openExternalLink(url);
     return;

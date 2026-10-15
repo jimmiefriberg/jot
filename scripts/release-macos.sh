@@ -66,6 +66,14 @@ codesign --verify --deep --strict "$app_path"
 spctl --assess --type execute --verbose=2 "$app_path"
 xcrun stapler validate "$app_path"
 
+# Tauri notarizes the app but not the DMG around it; notarize that too so it opens cleanly when downloaded.
+dmg_path="$(ls "$bundle_directory"/dmg/*.dmg)"
+echo
+echo "Notarizing the DMG…"
+xcrun notarytool submit "$dmg_path" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
+xcrun stapler staple "$dmg_path"
+spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg_path"
+
 echo
 echo "Done. Install: cp -R \"$app_path\" /Applications/"
-echo "Share:   $(ls "$bundle_directory"/dmg/*.dmg)"
+echo "Share:   $dmg_path"

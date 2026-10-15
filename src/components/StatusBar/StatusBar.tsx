@@ -30,6 +30,10 @@ function showPlain() {
   setViewMode(VIEW_MODE.plain);
 }
 
+function showSideBySide() {
+  setViewMode(VIEW_MODE.sideBySide);
+}
+
 function handleToggleSidebar() {
   void toggleSidebar();
 }
@@ -152,12 +156,21 @@ export function StatusBar() {
         )}
         {hasFormattedView(kind) && (
           <div className="segmented-control" role="group" aria-label="View">
-            <button className={isPlain ? undefined : 'is-active'} onClick={showFormatted} title="Formatted (⌘E)">
+            <button className={viewMode === VIEW_MODE.formatted ? 'is-active' : undefined} onClick={showFormatted} title="Formatted (⌘E)">
               Formatted
             </button>
             <button className={isPlain ? 'is-active' : undefined} onClick={showPlain} title="Plain (⌘E)">
               Plain
             </button>
+            {isMarkdown && (
+              <button
+                className={viewMode === VIEW_MODE.sideBySide ? 'is-active' : undefined}
+                onClick={showSideBySide}
+                title="Side by Side (⌥⌘E)"
+              >
+                Side by Side
+              </button>
+            )}
           </div>
         )}
       </div>

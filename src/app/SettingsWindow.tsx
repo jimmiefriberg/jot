@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { FILE_KIND_LABEL, VIEW_MODE } from '../lib/documents/file-kind';
+import { FILE_KIND, FILE_KIND_LABEL, VIEW_MODE } from '../lib/documents/file-kind';
 import type { FormattableKind, ViewMode } from '../lib/documents/file-kind';
 import { FONT_ROLE } from '../lib/settings/fonts';
-import { APPEARANCE, MAXIMUM_FONT_SIZE, MINIMUM_FONT_SIZE, SIDEBAR_SIDE, getAllThemes } from '../lib/settings/settings-schema';
-import type { Appearance, Settings, SidebarSide } from '../lib/settings/settings-schema';
+import { APPEARANCE, NUMBER_SETTING_RANGE, SIDEBAR_SIDE, getAllThemes } from '../lib/settings/settings-schema';
+import type { Appearance, NumberSettingKey, Settings, SidebarSide } from '../lib/settings/settings-schema';
 import { flushSettings, loadSettings, updateSettings, useActiveTheme, useSettingsStore } from '../lib/settings/settings-store';
 import { useSettingsSync } from '../lib/settings/use-settings-sync';
 import { handleCloseRequests, listenForMenuActions } from '../lib/tauri/backend';
@@ -13,11 +13,13 @@ import { useShowWindowWhenReady } from './use-editor-window';
 import { Icon } from '../components/Icon/Icon';
 import type { IconName } from '../components/Icon/Icon';
 import { FontPicker } from '../components/Settings/FontPicker';
-import { Segmented, SettingGroup, SettingRow, SwitchRow } from '../components/Settings/SettingRow';
+import { handleChoiceGroupKeyDown } from '../components/Settings/choice-group-keys';
+import { NumberInput, Segmented, SettingGroup, SettingRow, SwitchRow } from '../components/Settings/SettingRow';
+import { ShortcutSettings } from '../components/Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/Settings/ThemeEditor';
 import { ThemeGrid } from '../components/Settings/ThemeGrid';
 
-const SETTINGS_TAB = { general: 'general', themes: 'themes', editor: 'editor', files: 'files' } as const;
+const SETTINGS_TAB = { general: 'general', themes: 'themes', editor: 'editor', files: 'files', shortcuts: 'shortcuts' } as const;
 type SettingsTab = (typeof SETTINGS_TAB)[keyof typeof SETTINGS_TAB];
 
 const TABS: { tab: SettingsTab; label: string; icon: IconName }[] = [
@@ -25,11 +27,19 @@ const TABS: { tab: SettingsTab; label: string; icon: IconName }[] = [
   { tab: SETTINGS_TAB.themes, label: 'Themes', icon: 'palette' },
   { tab: SETTINGS_TAB.editor, label: 'Editor', icon: 'text' },
   { tab: SETTINGS_TAB.files, label: 'Files', icon: 'folder' },
+  { tab: SETTINGS_TAB.shortcuts, label: 'Shortcuts', icon: 'keyboard' },
 ];
 
 const TAB_STORAGE_KEY = 'settings-tab';
 const FORMATTABLE_KINDS: FormattableKind[] = ['markdown', 'json', 'csv', 'yaml', 'xml'];
 const LINE_WIDTH_OPTIONS = [0, 60, 72, 80, 100, 120];
+
+const PREVIEW_WIDTH_OPTIONS: { value: number; label: string }[] = [
+  { value: 760, label: 'Narrow' },
+  { value: 1000, label: 'Wide' },
+  { value: 1280, label: 'Extra wide' },
+  { value: 0, label: 'Full window' },
+];
 
 const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
   { value: APPEARANCE.system, label: 'Match system' },
@@ -46,6 +56,8 @@ const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
   { value: VIEW_MODE.formatted, label: 'Formatted' },
   { value: VIEW_MODE.plain, label: 'Plain' },
 ];
+
+const MARKDOWN_VIEW_MODE_OPTIONS = [...VIEW_MODE_OPTIONS, { value: VIEW_MODE.sideBySide, label: 'Side by Side' }];
 
 function isSettingsTab(value: unknown): value is SettingsTab {
   return Object.values(SETTINGS_TAB).some((tab) => tab === value);
@@ -75,11 +87,10 @@ function saveSwitch(key: keyof Settings) {
   };
 }
 
-/** Creates a handler for a number field that saves valid numbers only. */
-function saveNumber(key: 'fontSize' | 'lineHeight' | 'tabSize') {
-  return function handleNumberChange(event: ChangeEvent<HTMLInputElement>) {
-    const { valueAsNumber } = event.target;
-    if (!Number.isNaN(valueAsNumber)) updateSettings({ [key]: valueAsNumber });
+/** Creates a handler that saves one number setting (the field only passes values in range). */
+function saveNumber(key: NumberSettingKey) {
+  return function handleNumberChange(value: number) {
+    updateSettings({ [key]: value });
   };
 }
 
@@ -125,8 +136,8 @@ function GeneralTab() {
   return (
     <>
       <SettingGroup title="Appearance">
-        <SettingRow label="Appearance" description="Light and dark each use the theme picked in Themes.">
-          <Segmented label="Appearance" value={settings.appearance} options={APPEARANCE_OPTIONS} onChange={handleAppearanceChange} />
+        <SettingRow label="Light or dark" description="Pick the theme for each one in Themes.">
+          <Segmented label="Light or dark" value={settings.appearance} options={APPEARANCE_OPTIONS} onChange={handleAppearanceChange} />
         </SettingRow>
       </SettingGroup>
       <SettingGroup title="Windows">
@@ -152,23 +163,77 @@ function handleDarkThemeSelect(darkThemeId: string) {
   updateSettings({ darkThemeId });
 }
 
+/** When a light or dark theme is used, given the appearance setting. */
+function describeThemeUsage(isDark: boolean, appearance: Appearance): string {
+  const mode = isDark ? 'dark' : 'light';
+  if (appearance === APPEARANCE.system) return `Used while your system is in ${mode} mode.`;
+  const isUsed = (appearance === APPEARANCE.dark) === isDark;
+  return isUsed ? 'Used in every window.' : `Not used while ${isDark ? 'Light' : 'Dark'} is chosen above.`;
+}
+
+interface ThemeSectionProps {
+  isDark: boolean;
+  activeThemeId: string;
+  onSelect: (themeId: string) => void;
+  onCustomize: (themeId: string) => void;
+}
+
+/** The light or dark theme picker, with a line saying when its theme is used. */
+function ThemeSection({ isDark, activeThemeId, onSelect, onCustomize }: ThemeSectionProps) {
+  const settings = useSettingsStore((state) => state.settings);
+  const themes = getAllThemes(settings).filter((theme) => theme.isDark === isDark);
+  const selectedThemeId = isDark ? settings.darkThemeId : settings.lightThemeId;
+
+  function handleCustomize() {
+    onCustomize(selectedThemeId);
+  }
+
+  return (
+    <section className="setting-group">
+      <div className="theme-section-header">
+        <div className="theme-section-title">
+          <h2>{isDark ? 'Dark theme' : 'Light theme'}</h2>
+          <span className="theme-section-usage">{describeThemeUsage(isDark, settings.appearance)}</span>
+        </div>
+        <button className="theme-section-customize" onClick={handleCustomize}>
+          Customize colours…
+        </button>
+      </div>
+      <ThemeGrid themes={themes} selectedThemeId={selectedThemeId} activeThemeId={activeThemeId} onSelect={onSelect} />
+    </section>
+  );
+}
+
+function scrollBehavior(): ScrollBehavior {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+}
+
 function ThemesTab() {
   const settings = useSettingsStore((state) => state.settings);
   const activeTheme = useActiveTheme();
   const [editedThemeId, setEditedThemeId] = useState<string | null>(null);
-  const themes = getAllThemes(settings);
+  const customizeReference = useRef<HTMLDetailsElement>(null);
+
+  // Opens the colour editor on that theme and brings it into view, so editing doesn't mean scrolling past every card.
+  function handleCustomize(themeId: string) {
+    setEditedThemeId(themeId);
+    const details = customizeReference.current;
+    if (!details) return;
+    details.open = true;
+    details.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+    details.querySelector('summary')?.focus({ preventScroll: true });
+  }
 
   return (
     <>
-      <section className="setting-group">
-        <h2>Light theme</h2>
-        <ThemeGrid themes={themes.filter((theme) => !theme.isDark)} selectedThemeId={settings.lightThemeId} onSelect={handleLightThemeSelect} />
-      </section>
-      <section className="setting-group">
-        <h2>Dark theme</h2>
-        <ThemeGrid themes={themes.filter((theme) => theme.isDark)} selectedThemeId={settings.darkThemeId} onSelect={handleDarkThemeSelect} />
-      </section>
-      <details className="setting-group theme-customize">
+      <SettingGroup title="Appearance">
+        <SettingRow label="Light or dark">
+          <Segmented label="Light or dark" value={settings.appearance} options={APPEARANCE_OPTIONS} onChange={handleAppearanceChange} />
+        </SettingRow>
+      </SettingGroup>
+      <ThemeSection isDark={false} activeThemeId={activeTheme.id} onSelect={handleLightThemeSelect} onCustomize={handleCustomize} />
+      <ThemeSection isDark activeThemeId={activeTheme.id} onSelect={handleDarkThemeSelect} onCustomize={handleCustomize} />
+      <details ref={customizeReference} className="setting-group theme-customize">
         <summary>
           <h2>Customize colours</h2>
         </summary>
@@ -190,6 +255,10 @@ function handleLineWidthChange(event: ChangeEvent<HTMLSelectElement>) {
   updateSettings({ maximumLineWidth: Number(event.target.value) });
 }
 
+function handlePreviewWidthChange(event: ChangeEvent<HTMLSelectElement>) {
+  updateSettings({ previewWidth: Number(event.target.value) });
+}
+
 function EditorTab() {
   const settings = useSettingsStore((state) => state.settings);
   return (
@@ -202,17 +271,10 @@ function EditorTab() {
           <FontPicker role={FONT_ROLE.preview} label="Writing font" fontName={settings.previewFont} onChange={handlePreviewFontChange} />
         </SettingRow>
         <SettingRow label="Font size" description="⌘+ and ⌘− zoom a single window.">
-          <input
-            className="number-input"
-            type="number"
-            min={MINIMUM_FONT_SIZE}
-            max={MAXIMUM_FONT_SIZE}
-            value={settings.fontSize}
-            onChange={saveNumber('fontSize')}
-          />
+          <NumberInput value={settings.fontSize} {...NUMBER_SETTING_RANGE.fontSize} onChange={saveNumber('fontSize')} />
         </SettingRow>
         <SettingRow label="Line height">
-          <input className="number-input" type="number" min={1} max={3} step={0.1} value={settings.lineHeight} onChange={saveNumber('lineHeight')} />
+          <NumberInput value={settings.lineHeight} {...NUMBER_SETTING_RANGE.lineHeight} step={0.1} onChange={saveNumber('lineHeight')} />
         </SettingRow>
       </SettingGroup>
       <SettingGroup title="Layout">
@@ -226,8 +288,17 @@ function EditorTab() {
             ))}
           </select>
         </SettingRow>
+        <SettingRow label="Markdown width" description="How wide formatted Markdown can get.">
+          <select value={settings.previewWidth} onChange={handlePreviewWidthChange} aria-label="Markdown width">
+            {PREVIEW_WIDTH_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </SettingRow>
         <SettingRow label="Tab size">
-          <input className="number-input" type="number" min={1} max={8} value={settings.tabSize} onChange={saveNumber('tabSize')} />
+          <NumberInput value={settings.tabSize} {...NUMBER_SETTING_RANGE.tabSize} onChange={saveNumber('tabSize')} />
         </SettingRow>
         <SwitchRow label="Show line numbers" isChecked={settings.showLineNumbers} onChange={saveSwitch('showLineNumbers')} />
         <SwitchRow label="Highlight the current line" isChecked={settings.highlightActiveLine} onChange={saveSwitch('highlightActiveLine')} />
@@ -264,7 +335,12 @@ function DefaultViewRow({ kind, viewMode }: DefaultViewRowProps) {
 
   return (
     <SettingRow label={`${FILE_KIND_LABEL[kind]} opens as`}>
-      <Segmented label={`${FILE_KIND_LABEL[kind]} opens as`} value={viewMode} options={VIEW_MODE_OPTIONS} onChange={handleChange} />
+      <Segmented
+        label={`${FILE_KIND_LABEL[kind]} opens as`}
+        value={viewMode}
+        options={kind === FILE_KIND.markdown ? MARKDOWN_VIEW_MODE_OPTIONS : VIEW_MODE_OPTIONS}
+        onChange={handleChange}
+      />
     </SettingRow>
   );
 }
@@ -305,6 +381,7 @@ const TAB_CONTENT: Record<SettingsTab, () => React.JSX.Element> = {
   themes: ThemesTab,
   editor: EditorTab,
   files: FilesTab,
+  shortcuts: ShortcutSettings,
 };
 
 interface TabButtonProps {
@@ -321,11 +398,38 @@ function TabButton({ tab, label, icon, isActive, onSelect }: TabButtonProps) {
   }
 
   return (
-    <button role="tab" aria-selected={isActive} className={isActive ? 'is-active' : undefined} onClick={handleClick}>
+    <button role="tab" aria-selected={isActive} tabIndex={isActive ? 0 : -1} className={isActive ? 'is-active' : undefined} onClick={handleClick}>
       <Icon name={icon} size={18} />
       {label}
     </button>
   );
+}
+
+/** ⌘1–⌘5 (Ctrl on Linux) switch between the tabs, in the order they're shown. */
+function useTabShortcuts(setActiveTab: (tab: SettingsTab) => void) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+      const shortcutTab = TABS[Number(event.key) - 1];
+      if (!shortcutTab) return;
+      event.preventDefault();
+      setActiveTab(shortcutTab.tab);
+      storeTab(shortcutTab.tab);
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setActiveTab]);
+
+  // In the app the native Window menu owns ⌘1–⌘9 and passes them here as "window.selectTab.<number>".
+  useEffect(() => {
+    function handleMenuAction(actionId: string) {
+      const shortcutTab = TABS[Number(actionId.replace('window.selectTab.', '')) - 1];
+      if (!actionId.startsWith('window.selectTab.') || !shortcutTab) return;
+      setActiveTab(shortcutTab.tab);
+      storeTab(shortcutTab.tab);
+    }
+    return listenForMenuActions(handleMenuAction);
+  }, [setActiveTab]);
 }
 
 export function SettingsWindow() {
@@ -333,6 +437,7 @@ export function SettingsWindow() {
   const isReady = useSettingsWindowSetup();
   useShowWindowWhenReady(isReady);
   const [activeTab, setActiveTab] = useState<SettingsTab>(readStoredTab);
+  useTabShortcuts(setActiveTab);
 
   function handleSelectTab(tab: SettingsTab) {
     setActiveTab(tab);
@@ -344,7 +449,7 @@ export function SettingsWindow() {
 
   return (
     <div className="settings-window">
-      <nav className="settings-tabs" role="tablist" aria-label="Settings">
+      <nav className="settings-tabs" role="tablist" aria-label="Settings" onKeyDown={handleChoiceGroupKeyDown}>
         {TABS.map(({ tab, label, icon }) => (
           <TabButton key={tab} tab={tab} label={label} icon={icon} isActive={tab === activeTab} onSelect={handleSelectTab} />
         ))}

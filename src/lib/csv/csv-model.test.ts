@@ -91,6 +91,11 @@ describe('editing', () => {
     expect(edited.rows).toEqual([['a', 'x']]);
   });
 
+  test('editing a cell leaves other ragged rows as they were', () => {
+    const text = 'a,b,c\nd\ne,f\n';
+    expect(serializeCsv(setCell(parseCsv(text), 1, 0, 'x'))).toBe('a,b,c\nx\ne,f\n');
+  });
+
   test('serializes a region for the clipboard', () => {
     const csv = parseCsv('a,b,c\nd,e,f');
     expect(serializeRegion(csv, { start: 0, end: 1 }, { start: 1, end: 1 })).toBe('b\ne');

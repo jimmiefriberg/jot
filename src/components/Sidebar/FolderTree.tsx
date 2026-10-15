@@ -6,7 +6,7 @@ import { openFileInThisWindow } from '../../lib/documents/document-actions';
 import { useDocumentStore } from '../../lib/documents/document-store';
 import { createPendingEntry, renameEntry, showEntryContextMenu } from '../../lib/folders/folder-actions';
 import { setDirectoryExpanded, stopCreatingEntry, stopRenaming, toggleDirectory, useFolderStore } from '../../lib/folders/folder-store';
-import { openPaths } from '../../lib/tauri/backend';
+import { openPaths, placementForClick } from '../../lib/tauri/backend';
 import type { DirectoryEntry } from '../../lib/tauri/backend';
 import { Icon } from '../Icon/Icon';
 import type { IconName } from '../Icon/Icon';
@@ -81,14 +81,15 @@ function FolderTreeItem({ entry, depth, parentPath }: FolderTreeItemProps) {
   const isRenaming = useFolderStore((state) => state.renamingPath === entry.path);
   const isCurrentFile = useDocumentStore((state) => state.path === entry.path);
 
-  // Click opens a file here; ⌘-click opens it in a new window that shows the same folder.
+  // Click opens a file here; ⌥-click beside this pane, ⌘-click in a new tab, ⇧⌘-click in a new window (same folder).
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (entry.isDirectory) {
       toggleDirectory(entry.path);
       return;
     }
-    if (event.metaKey || event.ctrlKey) {
-      void openPaths([entry.path], useFolderStore.getState().folderPath);
+    const placement = placementForClick(event);
+    if (placement) {
+      void openPaths([entry.path], useFolderStore.getState().folderPath, placement);
       return;
     }
     void openFileInThisWindow(entry.path);

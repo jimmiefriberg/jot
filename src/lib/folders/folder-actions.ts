@@ -1,6 +1,6 @@
 import { getDirectoryName, getFileName } from '../documents/file-kind';
 import { openFileInThisWindow } from '../documents/document-actions';
-import { createFile, createFolder, openPaths, renamePath, revealInFinder, showContextMenu, showErrorMessage } from '../tauri/backend';
+import { OPEN_PLACEMENT, createFile, createFolder, openPaths, renamePath, revealInFinder, showContextMenu, showErrorMessage } from '../tauri/backend';
 import type { ContextMenuEntry, DirectoryEntry } from '../tauri/backend';
 import { startCreatingEntry, startRenaming, stopCreatingEntry, stopRenaming, useFolderStore } from './folder-store';
 import { refreshFolderListings } from './query-client';
@@ -69,8 +69,16 @@ export function showEntryContextMenu(entry: DirectoryEntry | null): void {
   const targetPath = entry?.path ?? folderPath;
   const directoryForNewEntries = entry === null || entry.isDirectory ? targetPath : getDirectoryName(targetPath);
 
+  function openInNewTab() {
+    void openPaths([targetPath], folderPath, OPEN_PLACEMENT.tab);
+  }
+
   function openInNewWindow() {
-    void openPaths([targetPath], folderPath);
+    void openPaths([targetPath], folderPath, OPEN_PLACEMENT.window);
+  }
+
+  function openToTheSide() {
+    void openPaths([targetPath], folderPath, OPEN_PLACEMENT.split);
   }
 
   function createNewFile() {
@@ -94,7 +102,14 @@ export function showEntryContextMenu(entry: DirectoryEntry | null): void {
   }
 
   const entries: ContextMenuEntry[] = [];
-  if (entry && !entry.isDirectory) entries.push({ label: 'Open in New Window', onSelect: openInNewWindow }, 'separator');
+  if (entry && !entry.isDirectory) {
+    entries.push(
+      { label: 'Open to the Side', onSelect: openToTheSide },
+      { label: 'Open in New Tab', onSelect: openInNewTab },
+      { label: 'Open in New Window', onSelect: openInNewWindow },
+      'separator',
+    );
+  }
   entries.push({ label: 'New File…', onSelect: createNewFile }, { label: 'New Folder…', onSelect: createNewFolder });
   if (entry) entries.push({ label: 'Rename…', onSelect: rename });
   entries.push('separator', { label: 'Reveal in Finder', onSelect: reveal }, { label: 'Copy Path', onSelect: copy });

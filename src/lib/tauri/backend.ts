@@ -8,7 +8,13 @@ import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 
 import { err, ok } from '../result';
 import type { Result } from '../result';
-import { BROWSER_SAMPLE_FOLDER, getBrowserSampleDirectory, getBrowserSampleDocument, getBrowserSampleFiles } from './browser-samples';
+import {
+  BROWSER_SAMPLE_FOLDER,
+  BROWSER_SAMPLE_MENU_COMMANDS,
+  getBrowserSampleDirectory,
+  getBrowserSampleDocument,
+  getBrowserSampleFiles,
+} from './browser-samples';
 
 export interface FileContents {
   contents: string;
@@ -50,6 +56,14 @@ export interface Draft {
   text: string;
 }
 
+/** A native menu command whose shortcut can be changed in Settings. Shortcuts use Tauri's format, like "CmdOrCtrl+Shift+K". */
+export interface MenuCommand {
+  id: string;
+  label: string;
+  menu: string;
+  defaultShortcut: string | null;
+}
+
 export interface ContextMenuItem {
   label: string;
   onSelect: () => void;
@@ -83,9 +97,10 @@ async function invokeSafely<T>(command: string, argumentsObject?: Record<string,
   }
 }
 
+/** Events sent to this page. In a split window each pane is its own web view, so events target the web view. */
 function listenToWindow<T>(eventName: string, onEvent: (payload: T) => void): () => void {
   if (!isRunningInTauri) return () => {};
-  const unlisten = getCurrentWindow().listen<T>(eventName, (event) => onEvent(event.payload));
+  const unlisten = getCurrentWebview().listen<T>(eventName, (event) => onEvent(event.payload));
   return () => void unlisten.then((stop) => stop());
 }
 
@@ -159,6 +174,11 @@ export function listenForSettingsChanges(onChange: (settings: unknown) => void):
   return listenToApp('settings-changed', onChange);
 }
 
+export async function getMenuCommands(): Promise<MenuCommand[]> {
+  if (!isRunningInTauri) return BROWSER_SAMPLE_MENU_COMMANDS;
+  return invoke<MenuCommand[]>('get_menu_commands');
+}
+
 export function listenForMenuActions(onAction: (actionId: string) => void): () => void {
   return listenToWindow('menu-action', onAction);
 }
@@ -191,10 +211,24 @@ export async function setWindowFolder(folder: string | null): Promise<void> {
   await invoke('set_window_folder', { folder });
 }
 
-/** Opens files in new windows; `folder` keeps the sidebar folder in those windows too. */
-export async function openPaths(paths: string[], folder: string | null = null): Promise<void> {
+/** Where a file opens: a new tab in the front window, a window of its own, or the pane beside this one. */
+export const OPEN_PLACEMENT = { tab: 'tab', window: 'window', split: 'split' } as const;
+export type OpenPlacement = (typeof OPEN_PLACEMENT)[keyof typeof OPEN_PLACEMENT];
+
+/** Opens files in new tabs (or windows); `folder` keeps the sidebar folder in them too. */
+export async function openPaths(paths: string[], folder: string | null = null, placement: OpenPlacement = OPEN_PLACEMENT.tab): Promise<void> {
   if (!isRunningInTauri || paths.length === 0) return;
-  await invoke('open_paths', { paths, folder });
+  await invoke('open_paths', { paths, folder, placement });
+}
+
+/**
+ * ⌘-click (Ctrl on Linux) opens in a new tab, ⇧⌘-click in a new window, ⌥-click beside this pane;
+ * a plain click returns null (open here).
+ */
+export function placementForClick(event: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }): OpenPlacement | null {
+  if (event.altKey && !(event.metaKey || event.ctrlKey)) return OPEN_PLACEMENT.split;
+  if (!(event.metaKey || event.ctrlKey)) return null;
+  return event.shiftKey ? OPEN_PLACEMENT.window : OPEN_PLACEMENT.tab;
 }
 
 /** Opens a new untitled window holding `contents`, shown as the given file kind. */
@@ -253,9 +287,9 @@ export async function revealInFinder(path: string): Promise<void> {
   await revealItemInDir(path);
 }
 
-export async function writeDraft(draft: Draft): Promise<void> {
-  if (!isRunningInTauri) return;
-  await invoke('write_draft', { draft });
+export async function writeDraft(draft: Draft): Promise<Result<null>> {
+  if (!isRunningInTauri) return ok(null);
+  return invokeSafely<null>('write_draft', { draft });
 }
 
 export async function deleteDraft(id: string): Promise<void> {
@@ -282,6 +316,7 @@ export async function showWindow(): Promise<void> {
   const currentWindow = getCurrentWindow();
   await currentWindow.show();
   await currentWindow.setFocus();
+  await getCurrentWebview().setFocus();
 }
 
 /** Safety net for startup: shows the window if nothing else has, so it can never stay invisible. */
@@ -295,17 +330,53 @@ export async function setWindowTitle(title: string): Promise<void> {
     document.title = title;
     return;
   }
-  await getCurrentWindow().setTitle(title);
+  // The window shows the title of its active pane, which Rust keeps track of.
+  await invoke('set_pane_title', { title });
 }
 
 /** Lets the window decide whether a close may go ahead. Returning false keeps the window open. */
+/**
+ * Asks `shouldClose` when this window or pane is about to close. Rust asks the panes of a window one at a time
+ * and closes once every one agrees.
+ */
 export function handleCloseRequests(shouldClose: () => Promise<boolean>): () => void {
   if (!isRunningInTauri) return () => {};
-  const unlisten = getCurrentWindow().onCloseRequested(async (event) => {
-    const isAllowed = await shouldClose();
-    if (!isAllowed) event.preventDefault();
-  });
-  return () => void unlisten.then((stop) => stop());
+  async function answerCloseRequest() {
+    let isAllowed = false;
+    try {
+      isAllowed = await shouldClose();
+    } finally {
+      await invoke('answer_close_request', { isAllowed });
+    }
+  }
+  const stopListening = listenToWindow('close-requested', () => void answerCloseRequest());
+  void invoke('register_close_handler');
+  return stopListening;
+}
+
+/** Where this pane sits in its window: alone, or the left or right half of a split. */
+export const PANE_POSITION = { single: 'single', left: 'left', right: 'right' } as const;
+export type PanePosition = (typeof PANE_POSITION)[keyof typeof PANE_POSITION];
+
+export function listenForPaneLayout(onChange: (position: PanePosition) => void): () => void {
+  return listenToWindow('pane-layout', onChange);
+}
+
+/** The other pane of a split asked this one to open a file (⌥-click, ⌥↩ in Quick Open). */
+export function listenForOpenInPane(onOpen: (path: string) => void): () => void {
+  return listenToWindow('open-in-pane', onOpen);
+}
+
+/** Tells Rust this pane has the focus, so menu actions come here and the window shows this pane's title. */
+export async function notifyPaneFocused(): Promise<void> {
+  if (!isRunningInTauri) return;
+  await invoke('pane_focused');
+}
+
+/** Moves the split divider to a horizontal screen position, or back to the middle with null. */
+export async function moveSplitDivider(screenX: number | null): Promise<void> {
+  if (!isRunningInTauri) return;
+  await invoke('move_split_divider', { screenX });
 }
 
 export function listenForWindowFocus(onFocus: () => void): () => void {

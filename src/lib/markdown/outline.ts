@@ -1,3 +1,5 @@
+import { findFrontMatter } from './markdown-features';
+
 export interface OutlineHeading {
   level: number;
   text: string;
@@ -34,6 +36,9 @@ export function extractOutline(text: string): OutlineHeading[] {
   const slugCounts = new Map<string, number>();
   const lines = text.split('\n');
   let openFence: string | null = null;
+  // Front matter (`---` … `---`) would otherwise read as a heading underlined with dashes.
+  const frontMatter = findFrontMatter(text);
+  const firstContentLine = frontMatter ? text.slice(0, frontMatter.to).split('\n').length : 0;
 
   function addHeading(level: number, rawText: string, lineIndex: number) {
     const headingText = plainHeadingText(rawText);
@@ -45,6 +50,7 @@ export function extractOutline(text: string): OutlineHeading[] {
   }
 
   lines.forEach((line, lineIndex) => {
+    if (lineIndex < firstContentLine) return;
     const fence = FENCE.exec(line)?.[1];
     if (openFence) {
       if (fence && fence[0] === openFence[0] && fence.length >= openFence.length) openFence = null;

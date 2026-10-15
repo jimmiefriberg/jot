@@ -1,22 +1,25 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, Runtime, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::files::resolve_target_path;
+use crate::panes;
 use crate::recent;
 use crate::session::{self, Draft, SessionWindow};
+use crate::tabs;
 
 pub const SETTINGS_WINDOW_LABEL: &str = "settings";
-const DOCUMENT_LABEL_PREFIX: &str = "document-";
+pub(crate) const DOCUMENT_LABEL_PREFIX: &str = "document-";
 const FOLDER_OPENED_EVENT: &str = "folder-opened";
 const PATH_RENAMED_EVENT: &str = "path-renamed";
 
 #[derive(Default)]
 pub struct WindowRegistry {
-    state: Mutex<RegistryState>,
+    pub(crate) state: Mutex<RegistryState>,
 }
 
 /// Text a window starts with instead of (or on top of) its file: a recovered draft or a converted document.
@@ -30,21 +33,48 @@ pub struct StartingText {
     kind: Option<String>,
 }
 
-/// What a document window shows: its file (if saved), the folder in its sidebar (if any) and any starting text.
+/// What a pane shows: its file (if saved), the folder in its sidebar (if any) and any starting text.
+/// A window has one pane (its own web view, with the window's label) or two side by side (see `panes`).
 #[derive(Default, Clone)]
-struct WindowEntry {
-    document_path: Option<PathBuf>,
-    folder_path: Option<PathBuf>,
-    starting_text: Option<StartingText>,
+pub(crate) struct WindowEntry {
+    pub(crate) document_path: Option<PathBuf>,
+    pub(crate) folder_path: Option<PathBuf>,
+    pub(crate) starting_text: Option<StartingText>,
+    /// Opens as a window of its own instead of a tab in the front window.
+    pub(crate) opens_in_own_window: bool,
+    /// The window this pane is in.
+    pub(crate) window_label: String,
+    /// The title this pane wants; the window shows the title of its active pane.
+    pub(crate) title: String,
 }
 
 #[derive(Default)]
-struct RegistryState {
-    windows: HashMap<String, WindowEntry>,
-    next_window_number: u64,
-    is_quitting: bool,
+pub(crate) struct RegistryState {
+    /// Every pane, by its web view's label.
+    pub(crate) windows: HashMap<String, WindowEntry>,
+    /// The panes of each document window, by window label.
+    pub(crate) layouts: HashMap<String, panes::Layout>,
+    /// Windows (or single panes) that are asking their panes about unsaved changes, by window label.
+    pub(crate) closing: HashMap<String, panes::CloseRequest>,
+    /// Panes (and the Settings window) whose page answers close requests.
+    pub(crate) close_handlers: HashSet<String>,
+    pub(crate) next_window_number: u64,
+    pub(crate) is_quitting: bool,
     /// Windows still to close during a quit. They close one at a time, so each unsaved-changes prompt stands alone.
-    quit_queue: Vec<String>,
+    pub(crate) quit_queue: Vec<String>,
+}
+
+/// Runs `action` with the registry locked. Keep it short: never call back into Tauri while holding the lock.
+pub(crate) fn with_registry<R: Runtime, T>(app: &AppHandle<R>, action: impl FnOnce(&mut RegistryState) -> T) -> T {
+    let registry = app.state::<WindowRegistry>();
+    let mut state = registry.state.lock().unwrap();
+    action(&mut state)
+}
+
+/// A new label for a window or pane.
+pub(crate) fn next_document_label(state: &mut RegistryState) -> String {
+    state.next_window_number += 1;
+    format!("{DOCUMENT_LABEL_PREFIX}{}", state.next_window_number)
 }
 
 #[derive(Serialize)]
@@ -66,21 +96,17 @@ pub fn is_document_window(label: &str) -> bool {
     label.starts_with(DOCUMENT_LABEL_PREFIX)
 }
 
-fn normalize_path(path: &Path) -> PathBuf {
-    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
-}
-
 fn path_to_string(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
 
-fn window_title(path: Option<&Path>) -> String {
+pub(crate) fn window_title(path: Option<&Path>) -> String {
     path.and_then(|path| path.file_name())
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| "Untitled".to_string())
 }
 
-fn window_showing_document(state: &RegistryState, path: &Path) -> Option<String> {
+pub(crate) fn window_showing_document(state: &RegistryState, path: &Path) -> Option<String> {
     state
         .windows
         .iter()
@@ -97,26 +123,28 @@ fn window_showing_only_folder(state: &RegistryState, folder: &Path) -> Option<St
         .map(|(label, _)| label.clone())
 }
 
-fn focus_window<R: Runtime>(app: &AppHandle<R>, label: &str) -> tauri::Result<()> {
-    if let Some(window) = app.get_webview_window(label) {
-        window.unminimize()?;
-        window.set_focus()?;
-    }
+/// Brings a pane's window (and tab) to the front and puts the keyboard focus in that pane.
+pub(crate) fn focus_window<R: Runtime>(app: &AppHandle<R>, pane_label: &str) -> tauri::Result<()> {
+    let Some(webview) = app.get_webview(pane_label) else { return Ok(()) };
+    let window = webview.window();
+    window.unminimize()?;
+    window.set_focus()?;
+    webview.set_focus()?;
+    panes::set_active_pane(app, pane_label);
     Ok(())
 }
 
 /// Registers and builds a new (hidden) document window. It shows itself once its content is ready.
 fn create_window<R: Runtime>(app: &AppHandle<R>, entry: WindowEntry) -> tauri::Result<()> {
     let has_folder = entry.folder_path.is_some();
+    let joins_tabs = !entry.opens_in_own_window;
     let title = window_title(entry.document_path.as_deref().or(entry.folder_path.as_deref()));
-    let label = {
-        let registry = app.state::<WindowRegistry>();
-        let mut state = registry.state.lock().unwrap();
-        state.next_window_number += 1;
-        let label = format!("{DOCUMENT_LABEL_PREFIX}{}", state.next_window_number);
-        state.windows.insert(label.clone(), entry);
+    let label = with_registry(app, |state| {
+        let label = next_document_label(state);
+        state.windows.insert(label.clone(), WindowEntry { window_label: label.clone(), title: title.clone(), ..entry });
+        state.layouts.insert(label.clone(), panes::Layout::single(&label));
         label
-    };
+    });
 
     let builder = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("index.html".into()))
         .title(title)
@@ -126,16 +154,27 @@ fn create_window<R: Runtime>(app: &AppHandle<R>, entry: WindowEntry) -> tauri::R
     #[cfg(target_os = "macos")]
     let builder = builder.tabbing_identifier("jot-document");
 
-    builder.build()?;
+    let window = builder.build()?.as_ref().window();
+    // Set before the window first shows, which is when macOS decides whether it becomes a tab.
+    app.run_on_main_thread(move || tabs::set_joins_tabs(&window, joins_tabs))?;
     Ok(())
 }
 
-/// Opens a window for a file, a folder, or nothing (untitled).
+/// Opens a file, a folder, or nothing (untitled) as a new tab in the front window.
 pub fn open_document_window<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf>, folder: Option<PathBuf>) -> tauri::Result<()> {
-    let path = path.map(|path| normalize_path(&path));
+    open_document(app, path, folder, false)
+}
+
+/// Like `open_document_window`, but as a window of its own.
+pub fn open_document_in_new_window<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf>, folder: Option<PathBuf>) -> tauri::Result<()> {
+    open_document(app, path, folder, true)
+}
+
+fn open_document<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf>, folder: Option<PathBuf>, opens_in_own_window: bool) -> tauri::Result<()> {
+    let path = path.map(|path| resolve_target_path(&path));
     let (document_path, folder_path) = match path {
         Some(path) if path.is_dir() => (None, Some(path)),
-        other => (other, folder.map(|folder| normalize_path(&folder))),
+        other => (other, folder.map(|folder| resolve_target_path(&folder))),
     };
 
     // A file that's already open, or a folder that's already open on its own, focuses that window instead.
@@ -154,16 +193,16 @@ pub fn open_document_window<R: Runtime>(app: &AppHandle<R>, path: Option<PathBuf
     if let Some(recent_path) = document_path.as_deref().or(folder_path.as_deref()) {
         recent::note_recent_item(app, recent_path);
     }
-    create_window(app, WindowEntry { document_path, folder_path, starting_text: None })
+    create_window(app, WindowEntry { document_path, folder_path, opens_in_own_window, ..Default::default() })
 }
 
 /// Reopens windows for drafts that survived a crash. Returns how many came back.
 pub fn recover_drafts<R: Runtime>(app: &AppHandle<R>, drafts: Vec<Draft>) -> usize {
     let mut recovered_count = 0;
     for draft in drafts {
-        let document_path = draft.path.as_deref().map(|path| normalize_path(Path::new(path)));
+        let document_path = draft.path.as_deref().map(|path| resolve_target_path(Path::new(path)));
         let starting_text = StartingText { text: draft.text, draft_id: Some(draft.id), kind: None };
-        if create_window(app, WindowEntry { document_path, folder_path: None, starting_text: Some(starting_text) }).is_ok() {
+        if create_window(app, WindowEntry { document_path, starting_text: Some(starting_text), ..Default::default() }).is_ok() {
             recovered_count += 1;
         }
     }
@@ -173,7 +212,7 @@ pub fn recover_drafts<R: Runtime>(app: &AppHandle<R>, drafts: Vec<Draft>) -> usi
 /// Reopens the windows that were open at the last quit, skipping files that are already open.
 pub fn restore_session<R: Runtime>(app: &AppHandle<R>) {
     for window in session::load_session(app) {
-        let document_path = window.path.as_deref().map(|path| normalize_path(Path::new(path)));
+        let document_path = window.path.as_deref().map(|path| resolve_target_path(Path::new(path)));
         let is_already_open = {
             let registry = app.state::<WindowRegistry>();
             let state = registry.state.lock().unwrap();
@@ -182,14 +221,14 @@ pub fn restore_session<R: Runtime>(app: &AppHandle<R>) {
         if is_already_open {
             continue;
         }
-        let folder_path = window.folder.as_deref().map(|folder| normalize_path(Path::new(folder)));
-        let _ = create_window(app, WindowEntry { document_path, folder_path, starting_text: None });
+        let folder_path = window.folder.as_deref().map(|folder| resolve_target_path(Path::new(folder)));
+        let _ = create_window(app, WindowEntry { document_path, folder_path, ..Default::default() });
     }
 }
 
-/// Shows a folder in an existing window's sidebar.
+/// Shows a folder in an existing pane's sidebar.
 fn show_folder_in_window<R: Runtime>(app: &AppHandle<R>, label: &str, folder: &Path) {
-    let folder = normalize_path(folder);
+    let folder = resolve_target_path(folder);
     if let Some(entry) = app.state::<WindowRegistry>().state.lock().unwrap().windows.get_mut(label) {
         entry.folder_path = Some(folder.clone());
     }
@@ -226,17 +265,26 @@ pub fn show_open_dialog<R: Runtime>(app: &AppHandle<R>) {
         });
 }
 
-pub fn focused_document_window<R: Runtime>(app: &AppHandle<R>) -> Option<WebviewWindow<R>> {
-    app.webview_windows()
-        .into_iter()
-        .find(|(label, window)| is_document_window(label) && window.is_focused().unwrap_or(false))
-        .map(|(_, window)| window)
+fn document_windows<R: Runtime>(app: &AppHandle<R>) -> Vec<Window<R>> {
+    app.windows().into_iter().filter(|(label, _)| is_document_window(label)).map(|(_, window)| window).collect()
+}
+
+pub fn focused_document_window<R: Runtime>(app: &AppHandle<R>) -> Option<Window<R>> {
+    document_windows(app).into_iter().find(|window| window.is_focused().unwrap_or(false))
+}
+
+/// Where menu actions go: the active pane of the focused document window, or the focused Settings window.
+pub fn focused_menu_target<R: Runtime>(app: &AppHandle<R>) -> Option<String> {
+    if let Some(window) = focused_document_window(app) {
+        return Some(panes::active_pane(app, window.label()));
+    }
+    app.windows().into_values().find(|window| window.is_focused().unwrap_or(false)).map(|window| window.label().to_string())
 }
 
 /// Picks a folder and shows it in the focused window's sidebar, or in a new window when none is focused.
 pub fn show_open_folder_dialog<R: Runtime>(app: &AppHandle<R>) {
     let app_handle = app.clone();
-    let target_label = focused_document_window(app).map(|window| window.label().to_string());
+    let target_label = focused_document_window(app).map(|window| panes::active_pane(app, window.label()));
     app.dialog().file().pick_folder(move |selected| {
         let Some(folder) = selected.and_then(|folder| folder.into_path().ok()) else { return };
         match &target_label {
@@ -249,7 +297,7 @@ pub fn show_open_folder_dialog<R: Runtime>(app: &AppHandle<R>) {
 }
 
 pub fn has_document_windows<R: Runtime>(app: &AppHandle<R>) -> bool {
-    app.webview_windows().keys().any(|label| is_document_window(label))
+    !document_windows(app).is_empty()
 }
 
 /// Closes the next window in the quit queue (focused first, so its prompt is in front). Exits when none are left.
@@ -269,7 +317,7 @@ fn close_next_quit_window<R: Runtime>(app: &AppHandle<R>) {
             }
             return;
         };
-        if let Some(window) = app.get_webview_window(&label) {
+        if let Some(window) = app.get_window(&label) {
             let _ = window.set_focus();
             let _ = window.close();
             return;
@@ -279,13 +327,15 @@ fn close_next_quit_window<R: Runtime>(app: &AppHandle<R>) {
 
 /// Remembers the open windows for the next launch, then closes them one by one; each asks about unsaved changes.
 pub fn start_quit<R: Runtime>(app: &AppHandle<R>) {
-    let open_labels: Vec<String> = app.webview_windows().into_keys().filter(|label| is_document_window(label)).collect();
+    let open_labels: Vec<String> = document_windows(app).iter().map(|window| window.label().to_string()).collect();
     {
         let registry = app.state::<WindowRegistry>();
         let mut state = registry.state.lock().unwrap();
+        // shortcut: panes of a split come back as separate tabs; store the layout in the session if splits should return.
         let session_windows: Vec<SessionWindow> = open_labels
             .iter()
-            .filter_map(|label| state.windows.get(label))
+            .flat_map(|label| state.layouts.get(label).map(|layout| layout.panes.clone()).unwrap_or_default())
+            .filter_map(|pane| state.windows.get(&pane))
             .filter(|entry| entry.document_path.is_some() || entry.folder_path.is_some())
             .map(|entry| SessionWindow {
                 path: entry.document_path.as_deref().map(path_to_string),
@@ -300,12 +350,17 @@ pub fn start_quit<R: Runtime>(app: &AppHandle<R>) {
 }
 
 pub fn handle_window_destroyed<R: Runtime>(app: &AppHandle<R>, label: &str) {
-    let is_quitting = {
-        let registry = app.state::<WindowRegistry>();
-        let mut state = registry.state.lock().unwrap();
-        state.windows.remove(label);
+    let is_quitting = with_registry(app, |state| {
+        let closed_panes: Vec<String> = state.windows.iter().filter(|(_, entry)| entry.window_label == label).map(|(pane, _)| pane.clone()).collect();
+        for pane in &closed_panes {
+            state.windows.remove(pane);
+            state.close_handlers.remove(pane);
+        }
+        state.close_handlers.remove(label);
+        state.layouts.remove(label);
+        state.closing.remove(label);
         state.is_quitting
-    };
+    });
     if is_quitting && is_document_window(label) {
         close_next_quit_window(app);
     }
@@ -330,9 +385,9 @@ pub fn handle_path_renamed<R: Runtime>(app: &AppHandle<R>, from: &Path, to: &Pat
 }
 
 #[tauri::command]
-pub fn get_document_context(window: WebviewWindow, registry: tauri::State<WindowRegistry>) -> DocumentContext {
+pub fn get_document_context(webview: Webview, registry: tauri::State<WindowRegistry>) -> DocumentContext {
     let mut state = registry.state.lock().unwrap();
-    let Some(entry) = state.windows.get_mut(window.label()) else {
+    let Some(entry) = state.windows.get_mut(webview.label()) else {
         return DocumentContext { path: None, folder_path: None, starting_text: None };
     };
     DocumentContext {
@@ -346,15 +401,17 @@ pub fn get_document_context(window: WebviewWindow, registry: tauri::State<Window
 /// Makes this window show `path` (or nothing, for untitled). Returns false (and focuses that window)
 /// when another window already has the file open.
 #[tauri::command]
-pub fn claim_document_path(app: AppHandle, window: WebviewWindow, registry: tauri::State<WindowRegistry>, path: Option<String>) -> bool {
-    let path = path.map(|path| normalize_path(Path::new(&path)));
+pub fn claim_document_path(app: AppHandle, webview: Webview, registry: tauri::State<WindowRegistry>, path: Option<String>) -> bool {
+    let path = path.map(|path| resolve_target_path(Path::new(&path)));
     let mut state = registry.state.lock().unwrap();
-    if let Some(other_label) = path.as_deref().and_then(|path| window_showing_document(&state, path)).filter(|label| label != window.label()) {
+    if let Some(other_label) = path.as_deref().and_then(|path| window_showing_document(&state, path)).filter(|label| label != webview.label()) {
         drop(state);
         let _ = focus_window(&app, &other_label);
         return false;
     }
-    state.windows.entry(window.label().to_string()).or_default().document_path = path.clone();
+    if let Some(entry) = state.windows.get_mut(webview.label()) {
+        entry.document_path = path.clone();
+    }
     drop(state);
     if let Some(path) = path {
         recent::note_recent_item(&app, &path);
@@ -363,34 +420,57 @@ pub fn claim_document_path(app: AppHandle, window: WebviewWindow, registry: taur
 }
 
 #[tauri::command]
-pub fn set_window_folder(window: WebviewWindow, registry: tauri::State<WindowRegistry>, folder: Option<String>) {
+pub fn set_window_folder(webview: Webview, registry: tauri::State<WindowRegistry>, folder: Option<String>) {
     let mut state = registry.state.lock().unwrap();
-    let entry = state.windows.entry(window.label().to_string()).or_default();
-    entry.folder_path = folder.map(|folder| normalize_path(Path::new(&folder)));
+    if let Some(entry) = state.windows.get_mut(webview.label()) {
+        entry.folder_path = folder.map(|folder| resolve_target_path(Path::new(&folder)));
+    }
 }
 
-/// Opens files in new windows. `folder` lets windows opened from a sidebar keep showing that folder.
+/// Opens files in new tabs, new windows, or the other pane of a split ("tab", "window" or "split").
+/// `folder` lets them keep showing the sidebar's folder.
 #[tauri::command]
-pub fn open_paths(app: AppHandle, paths: Vec<String>, folder: Option<String>) -> Result<(), String> {
+pub fn open_paths(app: AppHandle, webview: Webview, paths: Vec<String>, folder: Option<String>, placement: String) -> Result<(), String> {
     for path in paths {
-        open_document_window(&app, Some(PathBuf::from(path)), folder.as_ref().map(PathBuf::from)).map_err(|error| error.to_string())?;
+        let folder = folder.as_ref().map(PathBuf::from);
+        let path = PathBuf::from(path);
+        let result = match placement.as_str() {
+            "window" => open_document_in_new_window(&app, Some(path), folder),
+            "split" => panes::open_beside(&app, webview.label(), path, folder),
+            _ => open_document_window(&app, Some(path), folder),
+        };
+        result.map_err(|error| error.to_string())?;
     }
     Ok(())
+}
+
+/// Picks a tab of the focused window's tab group (`None` is the last), or does nothing without tabs.
+pub fn select_tab_in_focused_window<R: Runtime>(app: &AppHandle<R>, index: Option<usize>) {
+    if let Some(window) = focused_document_window(app) {
+        tabs::select_tab(&window, index);
+    }
+}
+
+/// A window that has shown itself lets later windows join it as tabs, even if it opened on its own.
+pub fn handle_window_focused<R: Runtime>(app: &AppHandle<R>, label: &str) {
+    if let Some(window) = app.get_window(label).filter(|_| is_document_window(label)) {
+        tabs::set_joins_tabs(&window, true);
+    }
 }
 
 /// Opens an untitled window holding `contents`, shown as `kind` (used by Convert to JSON/YAML/CSV).
 #[tauri::command]
 pub fn open_new_document(app: AppHandle, contents: String, kind: String) -> Result<(), String> {
     let starting_text = StartingText { text: contents, draft_id: None, kind: Some(kind) };
-    create_window(&app, WindowEntry { document_path: None, folder_path: None, starting_text: Some(starting_text) }).map_err(|error| error.to_string())
+    create_window(&app, WindowEntry { starting_text: Some(starting_text), ..Default::default() }).map_err(|error| error.to_string())
 }
 
 /// Dropped folders go to this window's sidebar; dropped files open in their own windows.
 #[tauri::command]
-pub fn open_dropped_paths(app: AppHandle, window: WebviewWindow, paths: Vec<String>) -> Result<(), String> {
+pub fn open_dropped_paths(app: AppHandle, webview: Webview, paths: Vec<String>) -> Result<(), String> {
     for path in paths.iter().map(PathBuf::from) {
         if path.is_dir() {
-            show_folder_in_window(&app, window.label(), &path);
+            show_folder_in_window(&app, webview.label(), &path);
         } else {
             open_document_window(&app, Some(path), None).map_err(|error| error.to_string())?;
         }

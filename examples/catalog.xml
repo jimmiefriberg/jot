@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A small book catalog -->
+<catalog>
+  <book id="b1" available="true">
+    <title>The Pragmatic Programmer</title>
+    <author>Andrew Hunt</author>
+    <author>David Thomas</author>
+    <price currency="USD">39.95</price>
+  </book>
+  <book id="b2" available="false">
+    <title>Structure and Interpretation of Computer Programs</title>
+    <author>Harold Abelson</author>
+    <price currency="USD">55.00</price>
+    <notes><![CDATA[Uses <Scheme> examples & exercises.]]></notes>
+  </book>
+</catalog>

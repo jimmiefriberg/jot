@@ -1,24 +1,58 @@
 // Sample documents used when the UI runs in a plain browser (development and smoke tests), where there is no file system.
 
 const SAMPLE_DOCUMENTS: Record<string, string> = {
-  md: `# Weekly notes
+  md: `---
+title: Weekly notes
+tags: [planning, jot]
+---
 
-Quick notes and a **to-do list**, with _emphasis_, \`inline code\` and a [link](https://example.com).
-Jump to the [reading list](#reading-list).
+# Weekly notes
+
+Quick notes and a **to-do list**, with _emphasis_, ~~strikethrough~~, ==highlights==, \`inline code\` and a [link](https://example.com). Press <kbd>⌘</kbd> <kbd>K</kbd> for links :rocket:
+Jump to the [reading list](#reading-list), or see the footnote.[^jot]
 
 ## To do
 - [x] Ship the spec
-- [ ] Build the CSV view
+- [ ] Build the CSV view, and make sure long items wrap neatly under their own text instead of under the checkbox
 - [ ] Pick a theme
+  - [ ] Try Tokyo Night
+  - [ ]
+
+1. First step
+2. Second step
+   - A nested bullet
 
 > Simple and readable above all.
 
-| Tool | Use |
-| --- | --- |
-| Jot | Notes |
+> [!TIP]
+> Alerts work like on GitHub: NOTE, TIP, IMPORTANT, WARNING and CAUTION.
 
-\`\`\`json
-{ "hello": "world" }
+> [!WARNING]
+> Back up before you migrate.
+
+| Tool | Use | Cost |
+| :--- | :--- | ---: |
+| Jot | Notes | $0 |
+| Spreadsheet | Numbers | $12 |
+
+The area of a circle is $A = \\pi r^2$, and it costs $5 and $10 to print.
+
+$$
+e^{i\\pi} + 1 = 0
+$$
+
+\`\`\`ts
+// Code blocks are highlighted in their language.
+function greet(name: string): string {
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+  Idea[Jot it down] --> Draft{Good enough?}
+  Draft -- yes --> Ship[Share it]
+  Draft -- no --> Idea
 \`\`\`
 
 ## Reading list
@@ -29,6 +63,10 @@ Jump to the [reading list](#reading-list).
 ### Later
 
 - Revisit the theme colours
+
+---
+
+[^jot]: Footnotes are numbered in the order you reference them.
 `,
   json: `{
   // Comments are fine
@@ -97,3 +135,13 @@ export function getBrowserSampleDocument(path: string): string | null {
   const extension = path.slice(path.lastIndexOf('.') + 1);
   return SAMPLE_DOCUMENTS[extension] ?? null;
 }
+
+/** A few menu commands so the Shortcuts settings can be tried in the browser. */
+export const BROWSER_SAMPLE_MENU_COMMANDS = [
+  { id: 'file.save', label: 'Save', menu: 'File', defaultShortcut: 'CmdOrCtrl+S' },
+  { id: 'file.quickOpen', label: 'Quick Open…', menu: 'File', defaultShortcut: 'CmdOrCtrl+P' },
+  { id: 'selection.deleteLine', label: 'Delete Line', menu: 'Selection', defaultShortcut: 'CmdOrCtrl+Shift+K' },
+  { id: 'table.insertRowAbove', label: 'Insert Row Above', menu: 'Table', defaultShortcut: null },
+  { id: 'table.insertColumnLeft', label: 'Insert Column Left', menu: 'Table', defaultShortcut: null },
+  { id: 'view.wordWrap', label: 'Toggle Word Wrap', menu: 'View', defaultShortcut: 'Alt+Z' },
+];

@@ -7,6 +7,8 @@ use serde::Serialize;
 use tauri::ipc::{InvokeBody, Request};
 
 const IMAGE_PATH_HEADER: &str = "x-path";
+/// Bigger files would freeze the editor (and could run out of memory), so they aren't opened.
+const MAXIMUM_FILE_SIZE: u64 = 50 * 1024 * 1024;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,8 +24,8 @@ pub fn modified_time_of(path: &Path) -> Option<u64> {
     Some(duration.as_millis() as u64)
 }
 
-/// Follows symlinks so saving replaces the target file, not the link.
-fn resolve_target_path(path: &Path) -> PathBuf {
+/// The real path behind symlinks (so saving replaces the target file, not the link), or the path as given if it doesn't exist yet.
+pub fn resolve_target_path(path: &Path) -> PathBuf {
     fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
@@ -79,11 +81,20 @@ fn decode_percent_encoding(text: &str) -> Option<String> {
     String::from_utf8(decoded).ok()
 }
 
-#[tauri::command]
+// Runs off the main thread (like the other file commands below), so a big file or slow disk doesn't freeze every window.
+#[tauri::command(async)]
 pub fn read_text_file(path: String) -> Result<FileContents, String> {
     let path = PathBuf::from(path);
-    if path.is_dir() {
+    let metadata = fs::metadata(&path).map_err(|error| error.to_string())?;
+    if metadata.is_dir() {
         return Err("This is a folder. Use File → Open Folder… to browse it.".into());
+    }
+    if metadata.len() > MAXIMUM_FILE_SIZE {
+        return Err(format!(
+            "This file is too large to open ({} MB; the limit is {} MB).",
+            metadata.len() / 1024 / 1024,
+            MAXIMUM_FILE_SIZE / 1024 / 1024
+        ));
     }
     let bytes = fs::read(&path).map_err(|error| error.to_string())?;
     if looks_binary(&bytes) {
@@ -101,7 +112,7 @@ pub fn read_text_file(path: String) -> Result<FileContents, String> {
 }
 
 /// Saves a document atomically and returns its new modified time.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_text_file(path: String, contents: String) -> Result<Option<u64>, String> {
     let path = PathBuf::from(path);
     write_atomically(&path, contents.as_bytes())?;
@@ -179,6 +190,15 @@ mod tests {
         let path = directory.join("image.png");
         fs::write(&path, [0x89, 0x50, 0x4E, 0x47, 0x00, 0x01]).unwrap();
         assert!(read_text_file(path.to_string_lossy().into_owned()).is_err());
+    }
+
+    #[test]
+    fn refuses_files_over_the_size_limit() {
+        let directory = temporary_directory("large");
+        let path = directory.join("huge.log");
+        fs::File::create(&path).unwrap().set_len(MAXIMUM_FILE_SIZE + 1).unwrap();
+        let error = read_text_file(path.to_string_lossy().into_owned()).err().unwrap();
+        assert!(error.contains("too large"));
     }
 
     #[test]

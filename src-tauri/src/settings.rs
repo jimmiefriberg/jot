@@ -5,6 +5,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::files::write_atomically;
+use crate::menu;
 
 fn settings_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     let directory = app.path().app_config_dir().map_err(|error| error.to_string())?;
@@ -38,6 +39,10 @@ pub fn save_settings(app: AppHandle, settings: Value) -> Result<(), String> {
         fs::create_dir_all(directory).map_err(|error| error.to_string())?;
     }
     let text = serde_json::to_string_pretty(&settings).map_err(|error| error.to_string())?;
+    let have_shortcuts_changed = read_settings(&app).and_then(|old| old.get("shortcuts").cloned()) != settings.get("shortcuts").cloned();
     write_atomically(&path, text.as_bytes())?;
+    if have_shortcuts_changed {
+        menu::rebuild_menu(&app);
+    }
     app.emit("settings-changed", settings).map_err(|error| error.to_string())
 }
