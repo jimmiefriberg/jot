@@ -4,3 +4,5 @@ src-tauri/target
 src-tauri/gen
 .DS_Store
 .impeccable/
+# Generated locally for testing big tables (about 6 MB); not committed.
+examples/huge.csv
