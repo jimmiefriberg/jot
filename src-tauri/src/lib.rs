@@ -7,6 +7,7 @@ mod recent;
 mod session;
 mod settings;
 mod tabs;
+mod updates;
 mod windows;
 
 use std::path::PathBuf;
@@ -46,6 +47,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(WindowRegistry::default())
         .manage(RecentItems::default())
         .manage(MenuCommands::default())
@@ -94,6 +96,10 @@ pub fn run() {
             recent::load_recent_items(app.handle());
             // Unsaved work from a crash comes back first, whatever else opens.
             windows::recover_drafts(app.handle(), session::load_drafts(app.handle()));
+            // Debug builds skip it, so development doesn't keep offering the published version.
+            if !cfg!(debug_assertions) {
+                updates::check_for_updates(app.handle(), false);
+            }
             for path in paths_from_arguments() {
                 windows::open_document_window(app.handle(), Some(path), None)?;
             }

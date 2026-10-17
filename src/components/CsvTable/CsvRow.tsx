@@ -14,6 +14,9 @@ interface CsvRowProps {
   editor: ReactNode;
   /** Columns of numbers, right-aligned so digits line up. */
   numericColumns: Set<number>;
+  /** For body rows: the row's place in the drawn list, and the callback that measures its height. */
+  virtualIndex?: number;
+  measureRef?: (element: HTMLTableRowElement | null) => void;
 }
 
 function cellClassName(isSelected: boolean, isNumeric: boolean): string | undefined {
@@ -33,12 +36,14 @@ export const CsvRow = memo(function CsvRow({
   editingColumn,
   editor,
   numericColumns,
+  virtualIndex,
+  measureRef,
 }: CsvRowProps) {
   const CellTag = isHeader ? 'th' : 'td';
   const columnIndexes = Array.from({ length: columnCount }, (_, columnIndex) => columnIndex);
 
   return (
-    <tr className={isHeader ? 'csv-header-row' : undefined}>
+    <tr ref={measureRef} data-index={virtualIndex} className={isHeader ? 'csv-header-row' : undefined}>
       <th className={`csv-row-number${isRowSelected ? ' is-selected' : ''}`} data-row-header={rowIndex}>
         {rowIndex + 1}
       </th>

@@ -62,6 +62,46 @@ pub(crate) struct RegistryState {
     pub(crate) is_quitting: bool,
     /// Windows still to close during a quit. They close one at a time, so each unsaved-changes prompt stands alone.
     pub(crate) quit_queue: Vec<String>,
+    /// Starts Jot again once the quit finishes (after an update is installed).
+    pub(crate) restarts_after_quit: bool,
+    /// Files whose tab or pane was closed, most recent last, for File → Reopen Closed Tab.
+    pub(crate) recently_closed: Vec<ClosedDocument>,
+}
+
+/// A closed tab's file and the folder its sidebar showed.
+pub(crate) struct ClosedDocument {
+    document_path: PathBuf,
+    folder_path: Option<PathBuf>,
+}
+
+const MAXIMUM_RECENTLY_CLOSED: usize = 20;
+
+/// Remembers a closed pane's file (untitled documents can't be reopened). Quitting doesn't count as closing tabs.
+pub(crate) fn remember_closed_pane(state: &mut RegistryState, entry: &WindowEntry) {
+    let Some(document_path) = entry.document_path.clone() else { return };
+    if state.is_quitting {
+        return;
+    }
+    state.recently_closed.retain(|closed| closed.document_path != document_path);
+    state.recently_closed.push(ClosedDocument { document_path, folder_path: entry.folder_path.clone() });
+    if state.recently_closed.len() > MAXIMUM_RECENTLY_CLOSED {
+        state.recently_closed.remove(0);
+    }
+}
+
+/// Opens the most recently closed file again, as a tab (skipping files that are open again already or gone).
+pub fn reopen_closed_tab<R: Runtime>(app: &AppHandle<R>) {
+    let closed = with_registry(app, |state| {
+        while let Some(closed) = state.recently_closed.pop() {
+            if closed.document_path.exists() && window_showing_document(state, &closed.document_path).is_none() {
+                return Some(closed);
+            }
+        }
+        None
+    });
+    if let Some(closed) = closed {
+        let _ = open_document_window(app, Some(closed.document_path), closed.folder_path);
+    }
 }
 
 /// Runs `action` with the registry locked. Keep it short: never call back into Tauri while holding the lock.
@@ -319,6 +359,9 @@ fn close_next_quit_window<R: Runtime>(app: &AppHandle<R>) {
         };
         let Some(label) = next_label else {
             if !has_document_windows(app) {
+                if with_registry(app, |state| state.restarts_after_quit) {
+                    app.restart();
+                }
                 app.exit(0);
             }
             return;
@@ -355,11 +398,19 @@ pub fn start_quit<R: Runtime>(app: &AppHandle<R>) {
     close_next_quit_window(app);
 }
 
+/// Quits like ⌘Q (asking about unsaved changes), then starts Jot again. Cancelling a prompt cancels the restart too.
+pub fn restart_after_quit<R: Runtime>(app: &AppHandle<R>) {
+    with_registry(app, |state| state.restarts_after_quit = true);
+    start_quit(app);
+}
+
 pub fn handle_window_destroyed<R: Runtime>(app: &AppHandle<R>, label: &str) {
     let is_quitting = with_registry(app, |state| {
         let closed_panes: Vec<String> = state.windows.iter().filter(|(_, entry)| entry.window_label == label).map(|(pane, _)| pane.clone()).collect();
         for pane in &closed_panes {
-            state.windows.remove(pane);
+            if let Some(entry) = state.windows.remove(pane) {
+                remember_closed_pane(state, &entry);
+            }
             state.close_handlers.remove(pane);
         }
         state.close_handlers.remove(label);
@@ -488,5 +539,6 @@ pub fn open_dropped_paths(app: AppHandle, webview: Webview, paths: Vec<String>) 
 pub fn cancel_quit(registry: tauri::State<WindowRegistry>) {
     let mut state = registry.state.lock().unwrap();
     state.is_quitting = false;
+    state.restarts_after_quit = false;
     state.quit_queue.clear();
 }

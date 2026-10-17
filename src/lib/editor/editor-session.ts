@@ -62,6 +62,7 @@ import { copyLineWhenNothingSelected, cutLineWhenNothingSelected, insertLineAbov
 import { livePreview } from './live-preview/live-preview';
 import { livePreviewEnvironment } from './live-preview/live-preview-environment';
 import { markdownImagePaste } from './markdown-images';
+import { markdownSmartPaste } from './markdown-paste';
 import { markdownSyntaxExtensions } from './markdown-syntax';
 import {
   deleteTableColumn,
@@ -128,7 +129,8 @@ function languageExtension(kind: FileKind): Extension {
   if (kind === FILE_KIND.markdown) {
     // Fenced code is highlighted in its own language; the grammars load the first time a language is used.
     const markdownSupport = markdown({ base: markdownLanguage, codeLanguages: languages, extensions: markdownSyntaxExtensions });
-    return [contentAttributes, markdownSupport, markdownImagePaste, markdownTableKeymap];
+    // Smart paste comes first: spreadsheets also put a picture of the cells on the clipboard, which isn't wanted here.
+    return [contentAttributes, markdownSupport, markdownSmartPaste, markdownImagePaste, markdownTableKeymap];
   }
   if (kind === FILE_KIND.json) {
     return [contentAttributes, json(), jsonLanguage.data.of({ commentTokens: { line: '//' } }), foldGutter(), closeBrackets()];
@@ -186,7 +188,7 @@ const editorKeymap = keymap.of([
   { key: 'Mod-l', run: selectLine, preventDefault: true },
   { key: 'Mod-Shift-l', run: selectSelectionMatches, preventDefault: true },
   { key: 'Ctrl-g', run: gotoLine, preventDefault: true },
-  { key: 'Mod-Shift-t', run: toggleTask, preventDefault: true },
+  { key: 'Mod-Alt-t', run: toggleTask, preventDefault: true },
   ...closeBracketsKeymap,
   ...defaultKeymap,
   ...searchKeymap,
@@ -294,16 +296,15 @@ function scrolledHeight(view: EditorView): number {
   return view.scrollDOM.getBoundingClientRect().top - view.documentTop;
 }
 
-/** Scrolls a side-by-side preview so it shows the same line as the top of the editor. */
-export function syncSideBySideScroll(preview: EditorView): void {
-  if (!editorView) return;
-  const editorHeight = scrolledHeight(editorView);
-  const editorBlock = editorView.lineBlockAtHeight(editorHeight);
-  const lineNumber = Math.min(editorView.state.doc.lineAt(editorBlock.from).number, preview.state.doc.lines);
-  const previewBlock = preview.lineBlockAt(preview.state.doc.line(lineNumber).from);
-  const progressInBlock = editorBlock.height > 0 ? (editorHeight - editorBlock.top) / editorBlock.height : 0;
-  const previewHeight = previewBlock.top + progressInBlock * previewBlock.height;
-  preview.scrollDOM.scrollTop += previewHeight - scrolledHeight(preview);
+/** Scrolls `target` so it shows the same line at its top as `source` does (both views hold the same text). */
+export function alignScroll(source: EditorView, target: EditorView): void {
+  const sourceHeight = scrolledHeight(source);
+  const sourceBlock = source.lineBlockAtHeight(sourceHeight);
+  const lineNumber = Math.min(source.state.doc.lineAt(sourceBlock.from).number, target.state.doc.lines);
+  const targetBlock = target.lineBlockAt(target.state.doc.line(lineNumber).from);
+  const progressInBlock = sourceBlock.height > 0 ? (sourceHeight - sourceBlock.top) / sourceBlock.height : 0;
+  const targetHeight = targetBlock.top + progressInBlock * targetBlock.height;
+  target.scrollDOM.scrollTop += targetHeight - scrolledHeight(target);
 }
 
 export function destroyEditor(): void {

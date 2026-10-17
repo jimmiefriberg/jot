@@ -143,19 +143,47 @@ const MINIMUM_COLUMN_WIDTH = 48;
 // shortcut: widths reset when the table's text changes and aren't saved with the file; key by position if that matters.
 const resizedColumnWidths = new Map<string, number[]>();
 
-function applyColumnWidths(table: HTMLTableElement, headerCells: HTMLElement[], widths: number[]) {
+// The table's 1px border on each side, on top of its columns.
+const TABLE_BORDER_WIDTH = 2;
+// How wide each view's resized tables are, so the note stays as wide as the widest one even while it's scrolled out
+// of view (CodeMirror removes tables that are off screen, which would otherwise make the note snap back).
+const resizedTableWidthsByView = new WeakMap<EditorView, Map<string, number>>();
+
+/** Keeps the note at least as wide as its widest resized table, plus the note's side padding. */
+function keepNoteWideEnough(view: EditorView) {
+  const tableWidths = [...(resizedTableWidthsByView.get(view)?.values() ?? [])];
+  if (tableWidths.length === 0) {
+    view.contentDOM.style.removeProperty('min-width');
+    return;
+  }
+  const contentStyle = getComputedStyle(view.contentDOM);
+  const sidePadding = parseFloat(contentStyle.paddingLeft) + parseFloat(contentStyle.paddingRight);
+  view.contentDOM.style.minWidth = `${Math.max(...tableWidths) + sidePadding}px`;
+}
+
+function rememberTableWidth(view: EditorView, key: string, width: number | null) {
+  const tableWidths = resizedTableWidthsByView.get(view) ?? new Map<string, number>();
+  if (width === null) tableWidths.delete(key);
+  else tableWidths.set(key, width);
+  resizedTableWidthsByView.set(view, tableWidths);
+  keepNoteWideEnough(view);
+}
+
+function applyColumnWidths(table: HTMLTableElement, headerCells: HTMLElement[], widths: number[]): number {
+  const tableWidth = widths.reduce((total, width) => total + width, 0);
   table.style.tableLayout = 'fixed';
-  table.style.width = `${widths.reduce((total, width) => total + width, 0)}px`;
+  table.style.width = `${tableWidth}px`;
   headerCells.forEach((cell, index) => {
     cell.style.width = `${widths[index]}px`;
   });
+  return tableWidth + TABLE_BORDER_WIDTH;
 }
 
 /** Adds a drag handle to the right edge of each header cell. Double-clicking a handle goes back to automatic widths. */
-function makeColumnsResizable(table: HTMLTableElement, key: string) {
+function makeColumnsResizable(table: HTMLTableElement, key: string, view: EditorView) {
   const headerCells = Array.from(table.querySelectorAll<HTMLElement>('thead th'));
   const savedWidths = resizedColumnWidths.get(key);
-  if (savedWidths?.length === headerCells.length) applyColumnWidths(table, headerCells, savedWidths);
+  if (savedWidths?.length === headerCells.length) rememberTableWidth(view, key, applyColumnWidths(table, headerCells, savedWidths));
 
   headerCells.forEach((cell, columnIndex) => {
     const handle = document.createElement('span');
@@ -173,7 +201,7 @@ function makeColumnsResizable(table: HTMLTableElement, key: string) {
 
       function handlePointerMove(moveEvent: PointerEvent) {
         widths[columnIndex] = Math.max(MINIMUM_COLUMN_WIDTH, startWidth + moveEvent.clientX - startX);
-        applyColumnWidths(table, headerCells, widths);
+        rememberTableWidth(view, key, applyColumnWidths(table, headerCells, widths));
       }
 
       function handlePointerUp() {
@@ -190,6 +218,7 @@ function makeColumnsResizable(table: HTMLTableElement, key: string) {
       event.preventDefault();
       event.stopPropagation();
       resizedColumnWidths.delete(key);
+      rememberTableWidth(view, key, null);
       table.style.removeProperty('table-layout');
       table.style.removeProperty('width');
       for (const headerCell of headerCells) headerCell.style.removeProperty('width');
@@ -216,13 +245,13 @@ export class TableWidget extends WidgetType {
     return other.html === this.html;
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const container = document.createElement('div');
     container.className = 'cm-lp-table';
     // The HTML comes from markdown-it with raw HTML disabled, so document content is escaped.
     container.innerHTML = this.html;
     const table = container.querySelector('table');
-    if (table) makeColumnsResizable(table, this.html);
+    if (table) makeColumnsResizable(table, this.html, view);
     return container;
   }
 

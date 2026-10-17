@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import 'pdfjs-dist/web/pdf_viewer.css';
 
@@ -6,6 +7,8 @@ import { useViewCommands } from '../../lib/commands/use-view-commands';
 import { useDocumentStore } from '../../lib/documents/document-store';
 import { localFileUrl, openInDefaultApp, showErrorMessage } from '../../lib/tauri/backend';
 import { usePdfViewer } from './use-pdf-viewer';
+import type { PdfMatchCount } from './use-pdf-viewer';
+import { Icon } from '../Icon/Icon';
 
 async function handleOpenInDefaultApp() {
   const { path } = useDocumentStore.getState();
@@ -14,15 +17,62 @@ async function handleOpenInDefaultApp() {
   if (!result.isOk) await showErrorMessage("Couldn't open the file", result.error);
 }
 
+function describeMatches(matchCount: PdfMatchCount | null): string {
+  if (!matchCount) return '';
+  if (matchCount.total === 0) return 'No matches';
+  return `${matchCount.current} of ${matchCount.total}`;
+}
+
 interface PdfPagesProps {
   url: string;
 }
 
-/** A read-only PDF with zoom in the toolbar and on ⌘+ / ⌘− / ⌘0 (and trackpad pinch). */
+/** A read-only PDF with search (⌘F) and zoom in the toolbar and on ⌘+ / ⌘− / ⌘0 (and trackpad pinch). */
 function PdfPages({ url }: PdfPagesProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { zoomPercent, errorMessage, zoomIn, zoomOut, resetZoom } = usePdfViewer(containerRef, url);
-  useViewCommands({ 'view.zoomIn': zoomIn, 'view.zoomOut': zoomOut, 'view.zoomReset': resetZoom });
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const { zoomPercent, errorMessage, matchCount, findText, zoomIn, zoomOut, resetZoom } = usePdfViewer(containerRef, url);
+
+  function focusSearch() {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  }
+
+  function findNext() {
+    findText(query, false, true);
+  }
+
+  function findPrevious() {
+    findText(query, true, true);
+  }
+
+  useViewCommands({
+    'view.zoomIn': zoomIn,
+    'view.zoomOut': zoomOut,
+    'view.zoomReset': resetZoom,
+    'edit.find': focusSearch,
+    'edit.findNext': findNext,
+    'edit.findPrevious': findPrevious,
+  });
+
+  function handleQueryChange(event: ChangeEvent<HTMLInputElement>) {
+    setQuery(event.target.value);
+    findText(event.target.value, false, false);
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      findText(query, event.shiftKey, true);
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setQuery('');
+      findText('', false, false);
+      event.currentTarget.blur();
+    }
+  }
 
   return (
     <>
@@ -37,6 +87,19 @@ function PdfPages({ url }: PdfPagesProps) {
           <button onClick={zoomIn} title="Zoom in (⌘+)" aria-label="Zoom in">
             +
           </button>
+        </div>
+        <div className="toolbar-search">
+          <Icon name="search" size={14} />
+          <input
+            ref={searchInputRef}
+            value={query}
+            onChange={handleQueryChange}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Search (⌘F)"
+            spellCheck={false}
+            aria-label="Search the PDF"
+          />
+          {query && <span className="toolbar-search-count">{describeMatches(matchCount)}</span>}
         </div>
         <span className="file-preview-note" />
         <div className="toolbar-group">

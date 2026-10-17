@@ -37,9 +37,14 @@
   overflow-wrap: anywhere;
 }
 
-.csv-table tbody tr {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 32px;
+/* Keeps a cell scrolled into view clear of the sticky toolbar, headers and row numbers. */
+.csv-table td,
+.csv-table .csv-row-number {
+  scroll-margin: 110px 0 0 52px;
+}
+
+.csv-spacer-row {
+  pointer-events: none;
 }
 
 .csv-table tbody tr:hover td {
@@ -78,6 +83,7 @@
 
 .csv-table .csv-row-number,
 .csv-table .csv-corner {
+  white-space: nowrap;
   position: sticky;
   left: 0;
   z-index: 1;

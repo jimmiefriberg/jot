@@ -16,7 +16,7 @@ Stack and reasoning: see [docs/research.md](docs/research.md). **Tauri 2 (Rust) 
 | YAML | `.yml`, `.yaml` | Collapsible tree in YAML notation (typed, coloured values; `---` documents as a list). Double-click to edit values and keys | CodeMirror with YAML highlighting, folding, ⌘/ comments |
 | XML | `.xml`, `.plist`, `.svg`, `.xsd`, `.xsl(t)` | Collapsible element tree with attributes; text-only elements inline; missing/mismatched tags reported. Double-click to edit text and attribute values | CodeMirror with XML highlighting, folding, ⌘/ comments |
 | HTML | `.html`, `.htm` | **Preview** of the saved file (relative CSS, images and scripts load; it reloads on save). Sandboxed: scripts run, but the page can't read other files or reach the app. **Open in Browser** for anything the preview can't do | CodeMirror with HTML highlighting and folding |
-| PDF | `.pdf` | **Preview only**, drawn by pdf.js (loaded the first time a PDF opens): selectable text, working links, zoom in the toolbar or with ⌘+ / ⌘− / ⌘0 (fit) and trackpad pinch, plus **Open in Default App**. Never edited or saved | none |
+| PDF | `.pdf` | **Preview only**, drawn by pdf.js (loaded the first time a PDF opens): selectable text, working links, **search** (⌘F; ↩ / ⇧↩ or ⌘G / ⇧⌘G step through matches, all highlighted), zoom in the toolbar or with ⌘+ / ⌘− / ⌘0 (fit) and trackpad pinch, plus **Open in Default App**. Never edited or saved | none |
 
 Any other text file (`.env`, `.toml`, `.ini`, `.sh`, no extension…) opens as plain text via File → Open ("All files"), drag-and-drop or Open With.
 
@@ -82,12 +82,12 @@ Kept deliberately simple:
 - Cells use the writing font; columns of numbers are right-aligned. Column widths are remembered per file; double-click a column edge to fit it to its contents.
 - The status bar shows the number of rows and columns.
 - The delimiter (comma, tab, semicolon…) and line endings are detected and kept on save. An edit only changes the text that actually differs, so the rest of the file stays byte for byte as it was.
-- Big files: rows use `content-visibility: auto`, and the first 2,000 rows render with a "Show more" button.
+- Big files: only the rows on screen are drawn (TanStack Virtual), so 100,000 rows scroll like 100; rows with wrapped text are measured as they appear. Moving the selection with the keyboard scrolls it into view. The row-number column widens to fit the largest row number.
 
 ## 4. Markdown (Formatted view = reading view)
 
 - Formatted is for reading: it can't be typed into, and markup (`#`, `**`, `>`, link URLs) stays hidden wherever the cursor is, so nothing shifts while you select and copy. Copying copies the Markdown source. Find (⌘F) works; edit commands, undo and Format Document do nothing here. Ticking a checkbox is the one edit it allows.
-- Edit in **Plain**, or in **Side by Side** (⌥⌘E): Plain on the left, the preview on the right, which updates as you type and scrolls with the editor.
+- Edit in **Plain**, or in **Side by Side** (⌥⌘E): Plain on the left, the preview on the right, which updates as you type. Scrolling either side scrolls the other to the same place.
 - Spacing and type follow GitHub's rendering: heading sizes with a rule under H1/H2, shorter blank lines between blocks, rounded code blocks, zebra-striped tables.
 - Prose uses the *writing font* from Settings; code uses the editor font.
 
@@ -118,14 +118,15 @@ Not rendered: GitHub-only references like `@user` and `#123`. A diagram Mermaid 
 **Lists:** bullets change with depth (• ◦ ▪), numbers line up, and wrapped lines align with the item's text (a hanging indent). In the editor, ↩ continues the list (tasks continue as new unchecked tasks).
 
 **Interaction**
-- Task checkboxes toggle with a click. *Format → Toggle Task* (⇧⌘T) turns lines into tasks, adds a checkbox to list items, or ticks existing tasks.
+- Task checkboxes toggle with a click. *Format → Toggle Task* (⌥⌘T) turns lines into tasks, adds a checkbox to list items, or ticks existing tasks.
 - Tables, math, diagrams and images always render. Code blocks show their language and a **Copy** button.
-- **Table columns** can be resized by dragging the edge of a header cell; double-click the edge to go back to automatic widths. Widths last while the window is open and aren't saved in the file.
+- **Table columns** can be resized by dragging the edge of a header cell; double-click the edge to go back to automatic widths. A table made wider than the note widens the note, and the note keeps that width while the table is scrolled out of view. Widths last while the window is open and aren't saved in the file.
 - **Tables (editing, in Plain or Side by Side):** Tab / ⇧Tab move to the next / previous cell (Tab in the last cell adds a row), and the columns are lined up as you go. The *Table* menu's insert row/column and delete row/column work on the table at the cursor. *Format Document* (⇧⌥F) lines up every table in the note.
 - A click follows links: web links open in the browser, `#heading` links jump to that heading, and relative links (`.md`, `.html`, `.pdf`, …) open that file in this window; ⌘-click opens it in a new tab, ⇧⌘-click in a new window, ⌥-click beside. A click also jumps between a footnote reference and its note. Dragging across a link selects it instead.
 - **Images:** pasting an image (a screenshot, say) saves it to an `images` folder next to the note and links it. Dropping image files on a note links them where they land (relative to the note).
 - **Outline:** *View → Show Outline* (⌥⌘O) or the status-bar list button shows the note's headings in the sidebar; click one to jump to it. The heading you're in is highlighted. Front matter is skipped.
 - ⌘B / ⌘I / ⌘K wrap the selection (or the word at the cursor) in bold, italic or a link.
+- **Pasting:** a URL pasted over selected text makes it a link. Cells copied from Excel, Numbers or Google Sheets paste as a lined-up Markdown table on lines of their own.
 
 ## 5. JSON (Formatted view)
 
@@ -151,7 +152,9 @@ Opened with ⌘, in its own window, with five tabs (⌘1–⌘5). Changes apply 
 
 - One document per window, and **documents open as native macOS tabs** of the front window (New ⌘N, Open, Open Recent, Finder, Quick Open ⌘↩, ⌘-click in the sidebar). ⌘1–⌘8 show that tab and ⌘9 the last one. *File → New Window* (⇧⌘N), ⇧⌘-click in the sidebar, ⇧⌘↩ in Quick Open and *Open in New Window* open a separate window instead. *Window → Merge All Windows* and *Move Tab to New Window* come from macOS.
 - **Split view:** *View → Split Right* (⌥⌘\\) opens a second pane beside the current one, showing the same sidebar folder (pressed again, it moves to the other pane). ⌥-click a file in the sidebar, ⌥↩ in Quick Open or *Open to the Side* opens it in the other pane (adding one if needed). Each pane is a full editor with its own document, sidebar and status bar; menu commands go to the pane you last clicked in, and the window shows that pane's title. Drag the line between the panes to resize them (double-click to even them out). ⌘W closes the pane you're in; closing the window asks about each pane's unsaved changes in turn. Splits come back as separate tabs after a relaunch.
-- New ⌘N, Open ⌘O (multi-select), **Open Recent** (files and folders, newest first, with *Clear Menu*), Save ⌘S, Save As ⇧⌘S, Revert to Saved, Close ⌘W.
+- **Updates:** at launch Jot quietly checks GitHub for a newer release (*Jot → Check for Updates…* checks on demand and always answers). A new version is offered with its notes; *Install and Restart* downloads it, quits the usual way (asking about unsaved changes; cancelling also cancels the restart) and starts the new version. Updates must be signed with Jot's update key, so a tampered download is refused.
+- **Help → Report a Problem…** opens a new GitHub issue with Jot's and macOS's versions filled in.
+- New ⌘N, Open ⌘O (multi-select), **Open Recent** (files and folders, newest first, with *Clear Menu*), Save ⌘S, Save As ⇧⌘S, Revert to Saved, Close ⌘W, **Reopen Closed Tab** ⇧⌘T (the last 20 closed files, this session).
 - **Quick Open** ⌘P: type part of a file name to find it among recent files and every file in the sidebar folder (dependency and build folders are skipped). ↩ opens it in this window, ⌘↩ in a new tab, ⇧⌘↩ in a new window.
 - **Reopen windows:** files and folders open at quit come back at the next launch (unless the app was opened with a file, or it's turned off in Settings).
 - **Crash recovery:** unsaved changes are written to a draft a moment after you stop typing. If the app quits unexpectedly, the next launch reopens those windows with the changes in place (unsaved, so you choose whether to keep them).

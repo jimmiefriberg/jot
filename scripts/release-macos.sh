@@ -7,6 +7,10 @@
 #   export APPLE_TEAM_ID="TEAMID"
 #   export APPLE_ID="you@example.com"
 #   export APPLE_PASSWORD="xxxx-xxxx-xxxx-xxxx"   # app-specific password from account.apple.com
+#   export TAURI_SIGNING_PRIVATE_KEY="$HOME/.tauri/jot-updater.key"   # signs updates; Jot only installs updates signed with it
+#   export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="…"
+#
+# Release notes for the update prompt can be passed as JOT_RELEASE_NOTES="…".
 #
 # Usage: bun run app:release                                      (this Mac's architecture)
 #        bun run app:release -- --target universal-apple-darwin   (Apple silicon + Intel)
@@ -26,7 +30,7 @@ set -a
 source "$signing_env_file"
 set +a
 
-for variable in APPLE_SIGNING_IDENTITY APPLE_TEAM_ID APPLE_ID APPLE_PASSWORD; do
+for variable in APPLE_SIGNING_IDENTITY APPLE_TEAM_ID APPLE_ID APPLE_PASSWORD TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD; do
   [[ -n "${!variable:-}" ]] || fail "$variable isn't set in $signing_env_file."
 done
 
@@ -74,6 +78,25 @@ xcrun notarytool submit "$dmg_path" --apple-id "$APPLE_ID" --team-id "$APPLE_TEA
 xcrun stapler staple "$dmg_path"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg_path"
 
+# latest.json tells installed copies of Jot about this version (see plugins.updater in tauri.conf.json).
+version="$(sed -nE 's/^  "version": "([^"]+)".*/\1/p' "$repository_root/src-tauri/tauri.conf.json")"
+update_archive="$bundle_directory/macos/Jot.app.tar.gz"
+update_url="https://github.com/jimmiefriberg/jot/releases/download/v$version/Jot.app.tar.gz"
+platforms="\"darwin-aarch64\": { \"signature\": \"$(cat "$update_archive.sig")\", \"url\": \"$update_url\" }"
+if [[ "$target_directory" == universal-apple-darwin/* ]]; then
+  platforms="$platforms, \"darwin-x86_64\": { \"signature\": \"$(cat "$update_archive.sig")\", \"url\": \"$update_url\" }"
+fi
+release_notes="${JOT_RELEASE_NOTES:-}"
+cat >"$bundle_directory/latest.json" <<JSON
+{
+  "version": "$version",
+  "notes": $(printf '%s' "$release_notes" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'),
+  "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "platforms": { $platforms }
+}
+JSON
+
 echo
 echo "Done. Install: cp -R \"$app_path\" /Applications/"
 echo "Share:   $dmg_path"
+echo "Publish: gh release create v$version \"$dmg_path\" \"$update_archive\" \"$bundle_directory/latest.json\" --title \"Jot $version\" --notes \"…\""

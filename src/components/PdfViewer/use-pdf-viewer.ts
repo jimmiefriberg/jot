@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
-import type { PDFViewer } from 'pdfjs-dist/web/pdf_viewer.mjs';
+import type { EventBus, PDFViewer } from 'pdfjs-dist/web/pdf_viewer.mjs';
 
 import { loadPdfViewer } from '../../lib/pdf/load-pdf-viewer';
 import { openExternalLink } from '../../lib/tauri/backend';
@@ -11,9 +11,18 @@ const DEFAULT_SCALE = 'auto';
 // How strongly a trackpad pinch (a ⌃-wheel event) zooms.
 const PINCH_SENSITIVITY = 100;
 
+/** Which match is selected (1-based) out of how many; 0 of 0 when nothing matches. */
+export interface PdfMatchCount {
+  current: number;
+  total: number;
+}
+
 export interface PdfViewerControls {
   zoomPercent: number | null;
   errorMessage: string | null;
+  matchCount: PdfMatchCount | null;
+  /** Searches for `query` (highlighting every match); `isAgain` steps to the next or previous match of the same text. */
+  findText: (query: string, isBackward: boolean, isAgain: boolean) => void;
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
@@ -22,6 +31,8 @@ export interface PdfViewerControls {
 /** Shows the PDF at `url` in the container: pages render as they scroll into view, with selectable text. */
 export function usePdfViewer(containerRef: RefObject<HTMLDivElement | null>, url: string): PdfViewerControls {
   const viewerRef = useRef<PDFViewer | null>(null);
+  const eventBusRef = useRef<EventBus | null>(null);
+  const [matchCount, setMatchCount] = useState<PdfMatchCount | null>(null);
   const [zoomPercent, setZoomPercent] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -51,9 +62,16 @@ export function usePdfViewer(containerRef: RefObject<HTMLDivElement | null>, url
       if (isCancelled) return;
       const eventBus = new viewer.EventBus();
       const linkService = new viewer.PDFLinkService({ eventBus });
-      const pdfViewer = new viewer.PDFViewer({ container: element, eventBus, linkService });
+      const findController = new viewer.PDFFindController({ eventBus, linkService });
+      const pdfViewer = new viewer.PDFViewer({ container: element, eventBus, linkService, findController });
       linkService.setViewer(pdfViewer);
       viewerRef.current = pdfViewer;
+      eventBusRef.current = eventBus;
+      function showMatchCount({ matchesCount }: { matchesCount: PdfMatchCount }) {
+        setMatchCount(matchesCount);
+      }
+      eventBus.on('updatefindmatchescount', showMatchCount);
+      eventBus.on('updatefindcontrolstate', showMatchCount);
       eventBus.on('pagesinit', function fitPages() {
         pdfViewer.currentScaleValue = DEFAULT_SCALE;
       });
@@ -77,6 +95,7 @@ export function usePdfViewer(containerRef: RefObject<HTMLDivElement | null>, url
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('click', handleClick);
       viewerRef.current = null;
+      eventBusRef.current = null;
       void loadingTask?.destroy();
     };
   }, [containerRef, url]);
@@ -93,5 +112,25 @@ export function usePdfViewer(containerRef: RefObject<HTMLDivElement | null>, url
     if (viewerRef.current) viewerRef.current.currentScaleValue = DEFAULT_SCALE;
   }
 
-  return { zoomPercent, errorMessage, zoomIn, zoomOut, resetZoom };
+  function findText(query: string, isBackward: boolean, isAgain: boolean) {
+    const eventBus = eventBusRef.current;
+    if (!eventBus) return;
+    if (query === '') {
+      eventBus.dispatch('findbarclose', { source: null });
+      setMatchCount(null);
+      return;
+    }
+    eventBus.dispatch('find', {
+      source: null,
+      type: isAgain ? 'again' : '',
+      query,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: true,
+      findPrevious: isBackward,
+      matchDiacritics: false,
+    });
+  }
+
+  return { zoomPercent, errorMessage, matchCount, findText, zoomIn, zoomOut, resetZoom };
 }

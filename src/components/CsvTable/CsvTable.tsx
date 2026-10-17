@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, ClipboardEvent, KeyboardEvent, MouseEvent } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { SORT_DIRECTION, columnLabel, detectNumericColumns, filterRowIndexes } from '../../lib/csv/csv-model';
 import { getSelectedColumnRange, isColumnHeaderSelected, isRowHeaderSelected } from '../../lib/csv/table-selection';
@@ -14,10 +15,17 @@ import { CsvRow } from './CsvRow';
 import { measureColumnWidth } from './measure-column';
 import { useColumnWidths } from './use-column-widths';
 import { useCsvTable } from './use-csv-table';
+import { useKeepSelectionInView } from './use-keep-selection-in-view';
 import { useKeyboardSink } from './use-keyboard-sink';
 
-const ROW_NUMBER_WIDTH = 52;
-const ROWS_PAGE_SIZE = 2000;
+const MINIMUM_ROW_NUMBER_WIDTH = 52;
+// Row numbers are 11px tabular digits: about 7px each, plus the cell's padding.
+const ROW_NUMBER_DIGIT_WIDTH = 7;
+const ROW_NUMBER_PADDING = 20;
+// A one-line row; rows with wrapped text are measured once they're drawn.
+const ESTIMATED_ROW_HEIGHT = 33;
+// Rows drawn beyond the visible ones, so fast scrolling doesn't show gaps.
+const OVERSCAN_ROWS = 12;
 
 const ARROW_OFFSETS: Record<string, { rows: number; columns: number }> = {
   ArrowUp: { rows: -1, columns: 0 },
@@ -37,11 +45,11 @@ export function CsvTable() {
   const table = useCsvTable(isFirstRowHeader);
   const { csv, rowCount, columnCount, selection, setSelection, editingCell, setEditingCell } = table;
   const { getColumnWidth, setColumnWidth } = useColumnWidths();
-  const [visibleRowLimit, setVisibleRowLimit] = useState(ROWS_PAGE_SIZE);
   const [filterQuery, setFilterQuery] = useState('');
   const sinkRef = useRef<HTMLTextAreaElement>(null);
   const filterInputRef = useRef<HTMLInputElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
 
   const hasHeaderRow = isFirstRowHeader && rowCount > 0;
   const firstBodyRow = hasHeaderRow ? 1 : 0;
@@ -51,6 +59,21 @@ export function CsvTable() {
   const bodyRowCount = rowCount - firstBodyRow;
   const isFiltering = filterQuery.trim().length > 0;
   const selectedColumn = getSelectedColumnRange(selection)?.start ?? null;
+
+  // Only the rows on screen are drawn. The list starts below the toolbar and headers; the extra rows drawn cover that offset.
+  const rowVirtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
+    count: matchingRowIndexes.length,
+    getScrollElement: getViewElement,
+    estimateSize: estimateRowHeight,
+    overscan: OVERSCAN_ROWS,
+  });
+  const selectedRow = getFocusedRow(selection);
+  const selectedCellColumn = selection?.kind === 'cell' ? selection.column : null;
+  useKeepSelectionInView(viewRef, rowVirtualizer, selectedRow, selectedCellColumn, selectedRow === null ? -1 : matchingRowIndexes.indexOf(selectedRow));
+
+  function getViewElement() {
+    return viewRef.current;
+  }
 
   const selectionText = table.getSelectionText();
   useKeyboardSink(sinkRef, selectionText, editingCell === null);
@@ -270,12 +293,7 @@ export function CsvTable() {
   function handleAddRow() {
     const newRowIndex = table.appendRow();
     setFilterQuery('');
-    setVisibleRowLimit((limit) => Math.max(limit, bodyRowCount + 1));
     startEditing(newRowIndex, 0, '');
-  }
-
-  function handleShowMoreRows() {
-    setVisibleRowLimit((limit) => limit + ROWS_PAGE_SIZE);
   }
 
   function handleFilterChange(event: ChangeEvent<HTMLInputElement>) {
@@ -296,7 +314,7 @@ export function CsvTable() {
     }
   }
 
-  function renderRow(rowIndex: number, isHeader: boolean) {
+  function renderRow(rowIndex: number, isHeader: boolean, virtualIndex?: number) {
     const isEditingRow = editingCell?.row === rowIndex;
     const highlighted = getHighlightedColumns(selection, rowIndex, columnCount);
     return (
@@ -311,6 +329,8 @@ export function CsvTable() {
         selectedTo={highlighted.to}
         editingColumn={isEditingRow ? editingCell.column : -1}
         numericColumns={numericColumns}
+        virtualIndex={virtualIndex}
+        measureRef={virtualIndex === undefined ? undefined : rowVirtualizer.measureElement}
         editor={
           isEditingRow ? (
             <CellEditor initialValue={editingCell.initialValue} onCommit={handleCommitCell} onCancel={handleCancelEdit} />
@@ -320,13 +340,16 @@ export function CsvTable() {
     );
   }
 
-  const shownRowIndexes = matchingRowIndexes.slice(0, visibleRowLimit);
-  const hiddenRowCount = matchingRowIndexes.length - shownRowIndexes.length;
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const spaceAboveRows = virtualRows[0]?.start ?? 0;
+  const spaceBelowRows = rowVirtualizer.getTotalSize() - (virtualRows.at(-1)?.end ?? 0);
   const columnIndexes = Array.from({ length: columnCount }, (_, columnIndex) => columnIndex);
-  const tableWidth = ROW_NUMBER_WIDTH + columnIndexes.reduce((total, columnIndex) => total + getColumnWidth(columnIndex), 0);
+  // Wide enough for the biggest row number, so 100,000 doesn't wrap onto two lines.
+  const rowNumberWidth = Math.max(MINIMUM_ROW_NUMBER_WIDTH, String(rowCount).length * ROW_NUMBER_DIGIT_WIDTH + ROW_NUMBER_PADDING);
+  const tableWidth = rowNumberWidth + columnIndexes.reduce((total, columnIndex) => total + getColumnWidth(columnIndex), 0);
 
   return (
-    <div className="formatted-view csv-view">
+    <div ref={viewRef} className="formatted-view csv-view">
       <textarea
         ref={sinkRef}
         className="csv-keyboard-sink"
@@ -392,7 +415,7 @@ export function CsvTable() {
           onDoubleClick={handleTableDoubleClick}
         >
           <colgroup>
-            <col style={{ width: ROW_NUMBER_WIDTH }} />
+            <col style={{ width: rowNumberWidth }} />
             {columnIndexes.map((columnIndex) => (
               <col key={columnIndex} style={{ width: getColumnWidth(columnIndex) }} />
             ))}
@@ -418,16 +441,15 @@ export function CsvTable() {
             </tr>
             {hasHeaderRow && renderRow(0, true)}
           </thead>
-          <tbody>{shownRowIndexes.map((rowIndex) => renderRow(rowIndex, false))}</tbody>
+          <tbody>
+            {spaceAboveRows > 0 && <tr className="csv-spacer-row" style={{ height: spaceAboveRows }} aria-hidden />}
+            {virtualRows.map((virtualRow) => renderRow(matchingRowIndexes[virtualRow.index], false, virtualRow.index))}
+            {spaceBelowRows > 0 && <tr className="csv-spacer-row" style={{ height: spaceBelowRows }} aria-hidden />}
+          </tbody>
         </table>
       )}
       {isFiltering && matchingRowIndexes.length === 0 && rowCount > 0 && <p className="empty-state">No rows match “{filterQuery}”.</p>}
-      {hiddenRowCount > 0 && (
-        <button className="show-more-button" onClick={handleShowMoreRows}>
-          Show {Math.min(hiddenRowCount, ROWS_PAGE_SIZE).toLocaleString()} more rows of {hiddenRowCount.toLocaleString()}
-        </button>
-      )}
-      {rowCount > 0 && hiddenRowCount === 0 && (
+      {rowCount > 0 && (
         <button className="csv-add-row" style={{ width: tableWidth }} onClick={handleAddRow} title="Add a row at the end">
           <Icon name="plus" size={14} />
           Add row
@@ -435,6 +457,17 @@ export function CsvTable() {
       )}
     </div>
   );
+}
+
+/** The row the selection's focus is in: the selected cell's row, or the last row picked in a row selection. */
+function getFocusedRow(selection: TableSelection): number | null {
+  if (selection?.kind === 'cell') return selection.row;
+  if (selection?.kind === 'rows') return selection.focus;
+  return null;
+}
+
+function estimateRowHeight() {
+  return ESTIMATED_ROW_HEIGHT;
 }
 
 function ignoreChange() {

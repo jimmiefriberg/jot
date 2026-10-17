@@ -204,7 +204,9 @@ fn start_closing<R: Runtime>(app: &AppHandle<R>, window_label: &str, pane: Optio
 /// Removes one pane of a split; the other one fills the window again.
 fn close_pane<R: Runtime>(app: &AppHandle<R>, window: &Window<R>, pane: &str) {
     let remaining_pane = with_registry(app, |state| {
-        state.windows.remove(pane);
+        if let Some(entry) = state.windows.remove(pane) {
+            windows::remember_closed_pane(state, &entry);
+        }
         state.close_handlers.remove(pane);
         let layout = state.layouts.get_mut(window.label())?;
         layout.panes.retain(|label| label != pane);

@@ -1,7 +1,15 @@
 # Jot
 
 A fast, small TextEdit replacement for notes, to-do lists, quick config fixes and previewing data files.
-`.md`, `.json`/`.jsonc`, `.yaml`, `.xml` and `.csv` open **formatted** (live Markdown, collapsible trees, a CSV table). Press **⌘E** to switch to plain text, **⌘P** to find a file, **⌘,** for Settings (21 themes, fonts, writing modes).
+Markdown, JSON (and JSON Lines), YAML, XML, CSV, HTML and PDF open **formatted** (a Markdown preview, collapsible trees, a CSV table, page previews). Press **⌘E** to switch to plain text, **⌘P** to find a file, **⌘,** for Settings (21 themes, fonts, writing modes).
+
+> **A personal project.** Jot is built for my own use and shared as is. You're welcome to use it, but expect bugs and rough edges, and there's no promise of support or fixes. Found a problem? Use **Help → Report a Problem** in the app, or [open an issue](https://github.com/jimmiefriberg/jot/issues).
+
+## Download
+
+Get the latest signed build from [Releases](https://github.com/jimmiefriberg/jot/releases/latest) (Apple silicon Macs). Jot checks for updates when it starts, or use **Jot → Check for Updates…**.
+
+## More
 
 - What it does: [SPEC.md](SPEC.md)
 - Why this stack (Tauri 2 + CodeMirror 6): [docs/research.md](docs/research.md)
@@ -40,3 +48,7 @@ Jot used to be called *Text Editor Plus*. On first launch it copies that version
 ## Linux (later)
 
 The same code builds on Linux (WebKitGTK). Install the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux), then run `bun run app:build -- --bundles deb,appimage`.
+
+## Licence
+
+[MIT](LICENSE). Provided as is, without warranty.

@@ -10,6 +10,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::panes;
 use crate::recent;
+use crate::updates;
 use crate::settings;
 use crate::windows;
 
@@ -112,6 +113,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             Some("format") => "Format",
             Some("table") => "Table",
             Some("window") => "Window",
+            Some("help") => "Help",
             _ => "View",
         };
         command_items.item(menu, id, text, accelerator)
@@ -120,6 +122,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let app_menu = SubmenuBuilder::new(app, "Jot")
         .about(Some(AboutMetadata::default()))
         .separator()
+        .item(&item("app.checkForUpdates", "Check for Updates…", None)?)
         .item(&item("app.settings", "Settings…", Some("CmdOrCtrl+Comma"))?)
         .separator()
         .services()
@@ -140,6 +143,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&item("file.quickOpen", "Quick Open…", Some("CmdOrCtrl+P"))?)
         .separator()
         .item(&item("file.close", "Close", Some("CmdOrCtrl+W"))?)
+        .item(&item("file.reopenClosedTab", "Reopen Closed Tab", Some("CmdOrCtrl+Shift+T"))?)
         .item(&item("file.save", "Save", Some("CmdOrCtrl+S"))?)
         .item(&item("file.saveAs", "Save As…", Some("CmdOrCtrl+Shift+S"))?)
         .item(&item("file.revert", "Revert to Saved", None)?)
@@ -187,7 +191,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&item("format.italic", "Italic", Some("CmdOrCtrl+I"))?)
         .item(&item("format.inlineCode", "Inline Code", Some("CmdOrCtrl+Shift+C"))?)
         .item(&item("format.link", "Link", Some("CmdOrCtrl+K"))?)
-        .item(&item("format.toggleTask", "Toggle Task", Some("CmdOrCtrl+Shift+T"))?)
+        .item(&item("format.toggleTask", "Toggle Task", Some("CmdOrCtrl+Alt+T"))?)
         .separator()
         .item(&item("format.upperCase", "Make Upper Case", None)?)
         .item(&item("format.lowerCase", "Make Lower Case", None)?)
@@ -253,8 +257,10 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     }
     let window_menu = window_menu.item(&item(SELECT_LAST_TAB_ID, "Show Last Tab", Some("CmdOrCtrl+9"))?).build()?;
 
+    let help_menu = SubmenuBuilder::new(app, "Help").item(&item("help.reportProblem", "Report a Problem…", None)?).build()?;
+
     let menu = MenuBuilder::new(app)
-        .items(&[&app_menu, &file_menu, &edit_menu, &selection_menu, &format_menu, &table_menu, &view_menu, &window_menu])
+        .items(&[&app_menu, &file_menu, &edit_menu, &selection_menu, &format_menu, &table_menu, &view_menu, &window_menu, &help_menu])
         .build()?;
     if let Some(menu_commands) = app.try_state::<MenuCommands>() {
         *menu_commands.0.lock().unwrap() = command_items.commands.into_inner();
@@ -297,10 +303,13 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
             let _ = windows::open_settings_window(app);
         }
         "app.quit" => windows::start_quit(app),
+        "app.checkForUpdates" => updates::check_for_updates(app, true),
+        "help.reportProblem" => updates::report_problem(app),
         "file.new" => {
             let _ = windows::open_document_window(app, None, None);
         }
         "file.close" => panes::close_focused(app),
+        "file.reopenClosedTab" => windows::reopen_closed_tab(app),
         "view.splitRight" => panes::split_right(app),
         "file.newWindow" => {
             let _ = windows::open_document_in_new_window(app, None, None);
