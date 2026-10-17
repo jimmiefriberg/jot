@@ -4,7 +4,7 @@
 
 ![Jot showing a Markdown note with the file sidebar](docs/screenshot-markdown.png)
 
-**[⬇ Download the latest version](https://github.com/jimmiefriberg/jot/releases/latest)** · signed and notarized by Apple
+**[⬇ Download the latest version](https://github.com/jimmiefriberg/jot/releases/latest)**
 
 **macOS only.** Releases are built for Apple silicon Macs (M1 and later). There are no Windows or Linux downloads; Linux users can [build it themselves](#linux-build-it-yourself).
 
