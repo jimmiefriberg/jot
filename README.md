@@ -4,7 +4,9 @@
 
 ![Jot showing a Markdown note with the file sidebar](docs/screenshot-markdown.png)
 
-**[⬇ Download the latest version](https://github.com/jimmiefriberg/jot/releases/latest)** · for Apple silicon Macs (M1 and later) · signed and notarized by Apple
+**[⬇ Download the latest version](https://github.com/jimmiefriberg/jot/releases/latest)** · signed and notarized by Apple
+
+**macOS only.** Releases are built for Apple silicon Macs (M1 and later). There are no Windows or Linux downloads; Linux users can [build it themselves](#linux-build-it-yourself).
 
 > **A personal project.** Jot is built for my own use and shared as is. You're welcome to use it, but expect bugs and rough edges, and there's no promise of support or fixes. Found a problem? Use **Help → Report a Problem** in the app, or [open an issue](https://github.com/jimmiefriberg/jot/issues).
 
@@ -72,9 +74,9 @@ That build isn't code-signed, so on first launch you'll need to right-click it a
 
 Installed copies find new versions through `latest.json` on the latest GitHub release, and only install updates signed with the update key.
 
-### Linux (later)
+### Linux (build it yourself)
 
-The same code builds on Linux (WebKitGTK). Install the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux), then run `bun run app:build -- --bundles deb,appimage`.
+Jot is made and tested on macOS only. The same code should build on Linux (WebKitGTK), but it isn't tested there and there are no Linux releases. To try it, install the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux), then run `bun run app:build -- --bundles deb,appimage`.
 
 ## Licence
 
