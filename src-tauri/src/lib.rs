@@ -51,6 +51,7 @@ pub fn run() {
         .manage(WindowRegistry::default())
         .manage(RecentItems::default())
         .manage(MenuCommands::default())
+        .manage(menu::FormatAvailability::default())
         .menu(menu::build_menu)
         .on_menu_event(|app, event| menu::handle_menu_event(app, event.id().as_ref()))
         .on_window_event(|window, event| {
@@ -70,6 +71,7 @@ pub fn run() {
             settings::load_settings,
             settings::save_settings,
             menu::get_menu_commands,
+            menu::set_format_available,
             folders::read_directory,
             folders::list_folder_files,
             folders::create_file,

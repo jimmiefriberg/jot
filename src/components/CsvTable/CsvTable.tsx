@@ -18,6 +18,8 @@ import { useCsvTable } from './use-csv-table';
 import { useKeepSelectionInView } from './use-keep-selection-in-view';
 import { useKeyboardSink } from './use-keyboard-sink';
 
+// What the hidden input holds while something is selected; copying replaces it with the selected cells.
+const SINK_PLACEHOLDER = ' ';
 const MINIMUM_ROW_NUMBER_WIDTH = 52;
 // Row numbers are 11px tabular digits: about 7px each, plus the cell's padding.
 const ROW_NUMBER_DIGIT_WIDTH = 7;
@@ -75,8 +77,7 @@ export function CsvTable() {
     return viewRef.current;
   }
 
-  const selectionText = table.getSelectionText();
-  useKeyboardSink(sinkRef, selectionText, editingCell === null);
+  useKeyboardSink(sinkRef, selection, editingCell === null);
 
   function moveRowsUp() {
     table.moveSelectedRows(-1);
@@ -279,9 +280,15 @@ export function CsvTable() {
     }
   }
 
-  function handleCut() {
-    // The browser copies the sink's selected text first; then the selection is removed.
-    requestAnimationFrame(table.removeSelection);
+  // The cells are only gathered when copying, so selecting a column of 100,000 rows stays instant.
+  function handleCopy(event: ClipboardEvent<HTMLTextAreaElement>) {
+    event.preventDefault();
+    table.copySelection(event.clipboardData);
+  }
+
+  function handleCut(event: ClipboardEvent<HTMLTextAreaElement>) {
+    event.preventDefault();
+    if (table.copySelection(event.clipboardData)) table.removeSelection();
   }
 
   function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
@@ -353,9 +360,10 @@ export function CsvTable() {
       <textarea
         ref={sinkRef}
         className="csv-keyboard-sink"
-        value={selectionText}
+        value={selection ? SINK_PLACEHOLDER : ''}
         onChange={ignoreChange}
         onKeyDown={handleKeyDown}
+        onCopy={handleCopy}
         onCut={handleCut}
         onPaste={handlePaste}
         aria-label="Table keyboard input"

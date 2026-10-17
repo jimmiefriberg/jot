@@ -76,7 +76,7 @@ Kept deliberately simple:
 - **Move:** ⌥↑/⌥↓ moves the selected rows. ⌥←/⌥→ moves the selected columns. With only a cell selected, these move that cell's row or column.
 - **Edit:** double-click or ↩ to edit a cell. ↩ commits and ⎋ cancels. Arrow keys move between cells. ⌫ clears the selected cell(s).
 - **Insert:** ⌘↩ / ⇧⌘↩ inserts a row below/above, ⌥⌘← / ⌥⌘→ a column left/right. The **+ Add row** button under the last row adds a row at the end and starts editing its first cell. *Table* menu: insert row above/below, insert column left/right, delete row(s)/column(s).
-- **Copy/Cut/Paste:** copy puts the selected rows/columns/cell on the clipboard as delimited text. Paste into a cell sets its value.
+- **Copy/Cut/Paste:** copy puts the selected rows/columns/cell on the clipboard as delimited text, plus an HTML table (so pasting into a Markdown note, or a spreadsheet, gives a table). The cells are gathered only when copying, so selecting a whole column of a huge file is instant. Paste into a cell sets its value.
 - **Sort:** select a column (or a cell in it), then use the toolbar's sort buttons or *Table → Sort by Column*. The header row stays put; numbers sort by value and empty cells go last. Undoable.
 - **Filter:** ⌘F (or *Table → Filter Rows…*) focuses the filter box; only rows with a matching cell are shown. ↩ jumps to the first match, ⎋ clears it.
 - Cells use the writing font; columns of numbers are right-aligned. Column widths are remembered per file; double-click a column edge to fit it to its contents.
@@ -121,12 +121,12 @@ Not rendered: GitHub-only references like `@user` and `#123`. A diagram Mermaid 
 - Task checkboxes toggle with a click. *Format → Toggle Task* (⌥⌘T) turns lines into tasks, adds a checkbox to list items, or ticks existing tasks.
 - Tables, math, diagrams and images always render. Code blocks show their language and a **Copy** button.
 - **Table columns** can be resized by dragging the edge of a header cell; double-click the edge to go back to automatic widths. A table made wider than the note widens the note, and the note keeps that width while the table is scrolled out of view. Widths last while the window is open and aren't saved in the file.
-- **Tables (editing, in Plain or Side by Side):** Tab / ⇧Tab move to the next / previous cell (Tab in the last cell adds a row), and the columns are lined up as you go. The *Table* menu's insert row/column and delete row/column work on the table at the cursor. *Format Document* (⇧⌥F) lines up every table in the note.
+- **Tables (editing, in Plain or Side by Side):** Tab / ⇧Tab move to the next / previous cell (Tab in the last cell adds a row), and the columns are lined up as you go. The *Table* menu's insert row/column and delete row/column work on the table at the cursor. *Format Document* (⇧⌥F) lines up every table in the note. It works for Markdown and JSON only, and is greyed out in the menu for other kinds.
 - A click follows links: web links open in the browser, `#heading` links jump to that heading, and relative links (`.md`, `.html`, `.pdf`, …) open that file in this window; ⌘-click opens it in a new tab, ⇧⌘-click in a new window, ⌥-click beside. A click also jumps between a footnote reference and its note. Dragging across a link selects it instead.
 - **Images:** pasting an image (a screenshot, say) saves it to an `images` folder next to the note and links it. Dropping image files on a note links them where they land (relative to the note).
 - **Outline:** *View → Show Outline* (⌥⌘O) or the status-bar list button shows the note's headings in the sidebar; click one to jump to it. The heading you're in is highlighted. Front matter is skipped.
 - ⌘B / ⌘I / ⌘K wrap the selection (or the word at the cursor) in bold, italic or a link.
-- **Pasting:** a URL pasted over selected text makes it a link. Cells copied from Excel, Numbers or Google Sheets paste as a lined-up Markdown table on lines of their own.
+- **Pasting:** a URL pasted over selected text makes it a link. Cells copied from Excel, Numbers, Google Sheets or Jot's own CSV table paste as a lined-up Markdown table on lines of their own (read from the HTML table those apps put on the clipboard).
 
 ## 5. JSON (Formatted view)
 

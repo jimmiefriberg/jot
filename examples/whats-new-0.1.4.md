@@ -4,22 +4,22 @@ A checklist for the new things. Links open the files (⌘-click for a new tab).
 
 ## Big CSV tables
 
-- [ ] Open [huge.csv](huge.csv) (100,000 rows). It should open quickly and scroll smoothly to the end, with no "Show more" button.
-- [ ] Click a cell, hold ↓ for a while: the table follows the selection.
-- [ ] Type in the filter (e.g. `Malmö`), press ↩: it jumps to the first match.
-- [ ] Row numbers up to 100001 stay on one line.
+- [x] Open [huge.csv](huge.csv) (100,000 rows). It should open quickly and scroll smoothly to the end, with no "Show more" button.
+- [x] Click a cell, hold ↓ for a while: the table follows the selection.
+- [x] Type in the filter (e.g. `Malmö`), press ↩: it jumps to the first match.
+- [x] Row numbers up to 100001 stay on one line.
 
 ## Markdown tables keep their width
 
-- [ ] In [the tour](markdown-tour.md), drag the right edge of a header cell in the wide table well past the text column.
-- [ ] Scroll far down and back up: the note keeps the same width the whole time.
-- [ ] Double-click the edge: the table and note go back to normal.
+- [x] In [the tour](markdown-tour.md), drag the right edge of a header cell in the wide table well past the text column.
+- [x] Scroll far down and back up: the note keeps the same width the whole time.
+- [x] Double-click the edge: the table and note go back to normal.
 
 ## PDF search
 
-- [ ] Open [presentation.pdf](presentation.pdf), press ⌘F and search for `steps`: it jumps to page 2 and highlights it.
-- [ ] ⌘G / ⇧⌘G (or ↩ / ⇧↩) step through matches; ⎋ clears.
-- [ ] ⌘+ / ⌘− / ⌘0 and pinch zoom the pages.
+- [x] Open [presentation.pdf](presentation.pdf), press ⌘F and search for `steps`: it jumps to page 2 and highlights it.
+- [x] ⌘G / ⇧⌘G (or ↩ / ⇧↩) step through matches; ⎋ clears.
+- [x] ⌘+ / ⌘− / ⌘0 and pinch zoom the pages.
 
 ## Smart paste (in Plain or Side by Side)
 
@@ -28,7 +28,11 @@ A checklist for the new things. Links open the files (⌘-click for a new tab).
 
 Paste here:
 
-
+id,name,email,city,joined,score
+1,Ada Lovelace,ada@example.com,London,1843-01-10,98.5
+2,Grace Hopper,grace@example.com,New York,1944-06-01,97
+3,Alan Turing,alan@example.com,Manchester,1936-11-12,99.1
+4,Katherine Johnson,katherine@example.com,Hampton,1953-05-20,96.4
 
 ## Side by Side scrolling
 

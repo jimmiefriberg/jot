@@ -13,7 +13,7 @@ import { useDocumentStore } from '../lib/documents/document-store';
 import { startDraftAutosave } from '../lib/documents/draft-autosave';
 import { getEditorView } from '../lib/editor/editor-session';
 import { insertDroppedImages } from '../lib/editor/markdown-images';
-import { handleMenuAction } from '../lib/commands/menu-actions';
+import { canFormatDocument, handleMenuAction } from '../lib/commands/menu-actions';
 import { handleFolderPathRenamed, openFolder } from '../lib/folders/folder-store';
 import { refreshFolderListings } from '../lib/folders/query-client';
 import { loadSettings } from '../lib/settings/settings-store';
@@ -28,6 +28,7 @@ import {
   listenForPathRenamed,
   listenForWindowFocus,
   openDroppedPaths,
+  setFormatAvailable,
   setWindowTitle,
   showWindow,
 } from '../lib/tauri/backend';
@@ -82,9 +83,14 @@ function handleOpenInPane(path: string) {
   void openFileInThisWindow(path);
 }
 
+function reportFormatAvailability() {
+  void setFormatAvailable(canFormatDocument(useDocumentStore.getState().kind));
+}
+
 // In a split window, the pane with the keyboard focus gets the menu actions and shows its title.
 function handlePageFocus() {
   void notifyPaneFocused();
+  reportFormatAvailability();
 }
 
 function listenForPageFocus(): () => void {
@@ -102,6 +108,7 @@ function handleRename(rename: PathRenamed) {
 export function useWindowIntegration(): void {
   const path = useDocumentStore((state) => state.path);
   const isDirty = useDocumentStore((state) => state.isDirty);
+  const kind = useDocumentStore((state) => state.kind);
   useOptionKeyShortcuts();
 
   useEffect(() => listenForMenuActions(handleMenuActionEvent), []);
@@ -113,6 +120,10 @@ export function useWindowIntegration(): void {
   useEffect(() => listenForOpenInPane(handleOpenInPane), []);
   useEffect(() => listenForPageFocus(), []);
   useEffect(() => startDraftAutosave(), []);
+  useEffect(() => {
+    // Only the page in front decides the menu's state; others report when they're focused.
+    if (document.hasFocus()) reportFormatAvailability();
+  }, [kind]);
   useEffect(() => {
     void setWindowTitle(`${getFileName(path)}${isDirty ? ' — Edited' : ''}`);
   }, [path, isDirty]);

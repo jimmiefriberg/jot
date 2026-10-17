@@ -1,4 +1,5 @@
 import { FILE_KIND, VIEW_MODE, hasSeparateFormattedView } from '../documents/file-kind';
+import type { FileKind } from '../documents/file-kind';
 import { revertDocument, saveDocument, saveDocumentAs } from '../documents/document-actions';
 import { setViewMode, toggleSideBySide, toggleViewMode, useDocumentStore } from '../documents/document-store';
 import { convertCurrentDocument } from '../convert/convert-actions';
@@ -10,6 +11,11 @@ import { swapSidebarSide, toggleSetting, useSettingsStore } from '../settings/se
 import { showOutline } from '../sidebar/sidebar-store';
 import { resetZoom, toggleWordWrap, zoomIn, zoomOut } from '../window/window-view-store';
 import { runViewCommand } from './command-bus';
+
+/** Format Document lines up Markdown tables and pretty-prints JSON; other kinds have nothing to format. */
+export function canFormatDocument(kind: FileKind): boolean {
+  return kind === FILE_KIND.markdown || kind === FILE_KIND.json;
+}
 
 function formatDocument() {
   const { kind } = useDocumentStore.getState();

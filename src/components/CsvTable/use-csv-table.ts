@@ -12,6 +12,8 @@ import {
   pasteRegion,
   serializeCsv,
   serializeRegion,
+  cellsToHtmlTable,
+  regionCells,
   setCell,
   sortRows,
 } from '../../lib/csv/csv-model';
@@ -120,11 +122,20 @@ export function useCsvTable(isFirstRowHeader: boolean) {
   }
 
   /** The selection as delimited text, ready for the clipboard. */
-  function getSelectionText(): string {
+  function getSelectedRegion() {
     const rows = selection?.kind === 'columns' ? { start: 0, end: rowCount - 1 } : getSelectedRowRange(selection);
     const columns = selection?.kind === 'rows' ? { start: 0, end: columnCount - 1 } : getSelectedColumnRange(selection);
-    if (!rows || !columns || rowCount === 0) return '';
-    return serializeRegion(csv, rows, columns);
+    if (!rows || !columns || rowCount === 0) return null;
+    return { rows, columns };
+  }
+
+  /** Puts the selected cells on the clipboard: delimited text, plus an HTML table for apps that paste tables. */
+  function copySelection(clipboard: DataTransfer): boolean {
+    const region = getSelectedRegion();
+    if (!region) return false;
+    clipboard.setData('text/plain', serializeRegion(csv, region.rows, region.columns));
+    clipboard.setData('text/html', cellsToHtmlTable(regionCells(csv, region.rows, region.columns)));
+    return true;
   }
 
   return {
@@ -146,6 +157,6 @@ export function useCsvTable(isFirstRowHeader: boolean) {
     setCellValue,
     removeSelection,
     pasteText,
-    getSelectionText,
+    copySelection,
   };
 }

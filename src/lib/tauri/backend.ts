@@ -368,6 +368,12 @@ export function listenForOpenInPane(onOpen: (path: string) => void): () => void 
 }
 
 /** Tells Rust this pane has the focus, so menu actions come here and the window shows this pane's title. */
+/** Greys out Format Document while the focused document can't be formatted. */
+export async function setFormatAvailable(isAvailable: boolean): Promise<void> {
+  if (!isRunningInTauri) return;
+  await invoke('set_format_available', { available: isAvailable });
+}
+
 export async function notifyPaneFocused(): Promise<void> {
   if (!isRunningInTauri) return;
   await invoke('pane_focused');

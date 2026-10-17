@@ -119,12 +119,26 @@ export function columnLabel(columnIndex: number): string {
   return label;
 }
 
+/** The cells of a rectangular part of the table; short rows are filled with empty cells. */
+export function regionCells(csv: CsvDocument, rows: IndexRange, columns: IndexRange): string[][] {
+  return csv.rows
+    .slice(rows.start, rows.end + 1)
+    .map((row) => Array.from({ length: columns.end - columns.start + 1 }, (_, offset) => row[columns.start + offset] ?? ''));
+}
+
 /** Serializes a rectangular part of the table as delimited text, for the clipboard. */
 export function serializeRegion(csv: CsvDocument, rows: IndexRange, columns: IndexRange): string {
-  const region = normalizeRows(csv)
-    .slice(rows.start, rows.end + 1)
-    .map((row) => row.slice(columns.start, columns.end + 1));
-  return Papa.unparse(region, { delimiter: csv.delimiter, newline: '\n' });
+  return Papa.unparse(regionCells(csv, rows, columns), { delimiter: csv.delimiter, newline: '\n' });
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Cells as an HTML table, the clipboard format spreadsheets and Jot's Markdown paste read as a table. */
+export function cellsToHtmlTable(cells: string[][]): string {
+  const rows = cells.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`);
+  return `<table>${rows.join('')}</table>`;
 }
 
 /** Pastes a block of cells (for example copied from a spreadsheet) with its top-left corner at the given cell. */

@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
 use serde::Serialize;
@@ -201,7 +202,7 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&item("format.sortDescending", "Sort Lines Descending", None)?)
         .item(&item("format.removeTrailingWhitespace", "Remove Trailing Whitespace", None)?)
         .separator()
-        .item(&item("view.formatDocument", "Format Document", Some("Alt+Shift+F"))?)
+        .item(&item(FORMAT_DOCUMENT_ID, "Format Document", Some("Alt+Shift+F"))?)
         .separator()
         .item(&item("format.convertToJson", "Convert to JSON", None)?)
         .item(&item("format.convertToYaml", "Convert to YAML", None)?)
@@ -271,7 +272,40 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 pub fn rebuild_menu<R: Runtime>(app: &AppHandle<R>) {
     if let Ok(app_menu) = build_menu(app) {
         let _ = app.set_menu(app_menu);
+        apply_format_availability(app);
     }
+}
+
+const FORMAT_DOCUMENT_ID: &str = "view.formatDocument";
+
+/// Whether the focused document's kind can be formatted (JSON, or Markdown's tables). Format Document is greyed out otherwise.
+pub struct FormatAvailability(pub AtomicBool);
+
+impl Default for FormatAvailability {
+    fn default() -> Self {
+        Self(AtomicBool::new(true))
+    }
+}
+
+fn apply_format_availability<R: Runtime>(app: &AppHandle<R>) {
+    let is_available = app.state::<FormatAvailability>().0.load(Ordering::Relaxed);
+    let item = app
+        .menu()
+        .and_then(|menu| menu.items().ok())
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry.as_submenu().cloned())
+        .find_map(|submenu| submenu.get(FORMAT_DOCUMENT_ID));
+    if let Some(menu_item) = item.as_ref().and_then(|entry| entry.as_menuitem()) {
+        let _ = menu_item.set_enabled(is_available);
+    }
+}
+
+/// The focused page reports whether its document can be formatted (when it gains focus or changes kind).
+#[tauri::command]
+pub fn set_format_available(app: AppHandle, available: bool) {
+    app.state::<FormatAvailability>().0.store(available, Ordering::Relaxed);
+    apply_format_availability(&app);
 }
 
 #[tauri::command]

@@ -16,6 +16,7 @@ import {
   pasteRegion,
   serializeCsv,
   serializeRegion,
+  cellsToHtmlTable,
   setCell,
   sortRows,
 } from './csv-model';
@@ -133,4 +134,8 @@ test('detects numeric columns', () => {
   expect(isNumericCell('$1,250.50')).toBe(true);
   expect(isNumericCell('12%')).toBe(true);
   expect(isNumericCell('v2')).toBe(false);
+});
+
+test('copied cells also go on the clipboard as an escaped HTML table', () => {
+  expect(cellsToHtmlTable([['a', '<b>'], ['1 & 2', '']])).toBe('<table><tr><td>a</td><td>&lt;b&gt;</td></tr><tr><td>1 &amp; 2</td><td></td></tr></table>');
 });
