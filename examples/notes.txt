@@ -1,6 +1,13 @@
-Plain text notes.
+Meeting notes, Tuesday
 
-Try: ⌘C on a line with nothing selected copies the whole line.
-Try: ⌥Z toggles word wrap. This line is deliberately long so that you can see word wrap turning on and off without having to resize the window at all.
-Try: ⌘L selects a line, ⌥↑/⌥↓ moves it, ⇧⌥↓ duplicates it.
-    Trailing spaces on this line →   
+Attendees: Sam, Alex, Priya, Jonas
+Agenda: budget, venue, travel, and the long list of things that came up at the end of the meeting that nobody had planned to talk about but that turned out to matter quite a lot.
+
+Decisions
+- Book the venue in Uppsala.
+- Priya sends the invitations by Friday.
+- Jonas checks train times.
+
+Open questions
+    How many vegetarian meals?   
+    Do we need a projector?	

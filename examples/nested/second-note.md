@@ -1,20 +1,19 @@
-# Second note
+# Reading list
 
-A note in a subfolder, for the sidebar and Quick Open (⌘P).
-Open it beside [the tour](../markdown-tour.md) with ⌥-click in the sidebar.
+Books and files to go through before the offsite. See also the [offsite plan](../markdown-tour.md).
 
-| Shortcut | What it does |
-|--|--|
-| ⌘1–⌘9 | Switch tabs |
-| ⌥⌘\ | Split right |
-| ⌥⌘E | Side by side preview |
+| Title | Author | Status |
+|--|--|--|
+| A Philosophy of Software Design | John Ousterhout | Reading |
+| The Pragmatic Programmer | Hunt & Thomas | Done |
+| Shape Up | Ryan Singer | To read |
 
-Links (a click follows them; ⌘-click opens a new tab):
+## Files
 
 | File | Kind |
 |--|--|
-| [Markdown tour](../markdown-tour.md) | Markdown |
+| [Offsite plan](../markdown-tour.md) | Markdown |
 | [Dashboard](../artifact/dashboard.html) | HTML |
-| [Presentation](../presentation.pdf) | PDF |
-| [Events](../events.jsonl) | JSON Lines |
-| [GitHub](https://github.com) | Web |
+| [Quarterly review](../presentation.pdf) | PDF |
+| [Server events](../events.jsonl) | JSON Lines |
+| [Example site](https://example.com) | Web |

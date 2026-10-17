@@ -1,3 +1,4 @@
-This file uses Windows (CRLF) line endings.
-The status bar should say CRLF.
-Saving keeps them as CRLF.
+Shipping manifest
+Order 1042: 3 boxes, Stockholm
+Order 1043: 1 box, Malmo
+Order 1044: 7 boxes, Goteborg

@@ -1,91 +1,89 @@
 ---
-title: Markdown tour
-tags: [jot, example]
+title: Team offsite plan
+tags: [planning, offsite]
+owner: Sam Lindqvist
 ---
 
-# Markdown tour
+# Team offsite plan
 
-Everything Jot renders, in one note. Switch between **Formatted**, **Plain** and **Side by Side** in the status bar.
+Two days in **Uppsala** for the whole team: planning, a workshop and *plenty* of fika. Budget is ~~SEK 80,000~~ SEK 95,000 after the venue change. Book with <kbd>Ctrl</kbd> <kbd>B</kbd> in the booking tool. H<sub>2</sub>O and coffee provided, x<sup>2</sup> snacks. :tada: :coffee:
 
-## Text
+See the [venue site](https://example.com), the [schedule](#schedule), the [attendee list](people.csv), https://example.org, and the catering note.[^catering] ==Final headcount due Friday.==
 
-Some **bold**, some *italic*, some ***both***, ~~struck~~, `inline code`, ==highlighted==, H<sub>2</sub>O and x<sup>2</sup>.
-Press <kbd>⌘</kbd><kbd>E</kbd> to switch views. :tada: :rocket:
-
-A [web link](https://github.com), a [heading link](#tables), a [file link](notes.txt), an autolink https://example.com and a footnote.[^1]
-
-> A quote can span
-> several lines.
+> Good planning is half the work.
+> The other half is the snacks.
 
 > [!NOTE]
-> GitHub-style alerts render too.
+> The venue has step-free access and a quiet room.
 
 > [!WARNING]
-> This one is a warning.
+> Trains on the Sunday are replaced by buses.
 
-## Lists
+## Packing list
 
-- First
-- Second
-  - Nested
-    - Deeper
-1. One
-2. Two
-3. Three
+- Laptop and charger
+- Notebook
+  - Spare pens
+    - A highlighter
+- Rain jacket
 
-- [x] Finished task
-- [ ] Open task (click the box in Formatted view)
-- [ ] Another one
+1. Book the venue
+2. Send invitations
+3. Collect dietary needs
+
+- [x] Venue booked
+- [x] Invitations sent
+- [ ] Dietary needs collected
+- [ ] Name badges printed
 
 ---
 
-## Tables
+## Schedule
 
-The short GitHub form, no alignment colons:
-
-| Name | Role | City |
+| Time | Day 1 | Day 2 |
 |--|--|--|
-| Ada | Engineer | London |
-| Grace | Admiral | New York |
+| 09:00 | Arrival and coffee | Workshop |
+| 12:00 | Lunch | Lunch |
+| 14:00 | Planning session | Wrap-up |
 
-Aligned columns and a wide table (drag the header edges to resize, double-click an edge to reset):
+## Budget
 
-| Left | Centered | Right | A long description column that should wrap once you make it narrower |
-|:-----|:--------:|------:|:-----|
-| a | b | 1 | Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor. |
-| `code` | **bold** | 22 | Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. |
-| [link](https://example.com) | *italic* | 333 | Duis aute irure dolor in reprehenderit in voluptate velit esse. |
+| Item | Supplier | Cost (SEK) | Notes |
+|:-----|:--------:|-----------:|:------|
+| Venue | Slottet Konferens | 42,000 | Includes two meeting rooms, a projector and a terrace that is available until late in the evening if the weather holds. |
+| Catering | `Fika & Co` | 31,500 | **Vegetarian** by default; vegan and gluten-free on request. |
+| Travel | [SJ](https://example.com) | 21,500 | *Group ticket*, second class, booked as one reservation for everyone. |
 
-## Code
+## Room booking script
 
 ```ts
-function greet(name: string): string {
-  return `Hello, ${name}!`;
+function hasCapacity(room: { seats: number }, attendees: number): boolean {
+  return room.seats >= attendees;
 }
 ```
 
 ```python
-def fib(n):
-    return n if n < 2 else fib(n - 1) + fib(n - 2)
+def cost_per_person(total, people):
+    return round(total / people, 2)
 ```
 
-## Math
+## Numbers
 
-Inline math $e^{i\pi} + 1 = 0$ and a block:
+Cost per person is $\frac{95000}{24} \approx 3958$ SEK, and the room fits
 
 $$
-\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}
+\text{seats} = 6 \times 4 = 24
 $$
 
-## Diagram
+## Plan
 
 ```mermaid
 flowchart LR
-  Write --> Preview --> Share
+  Book --> Invite --> Confirm --> Travel
 ```
 
-## Image
+## Logo
 
-![Jot icon](icon.svg)
+![Team logo](icon.svg)
 
-[^1]: Footnotes jump back and forth with ⌘-click.
+[^catering]: Catering confirms the menu one week before.
