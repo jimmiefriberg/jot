@@ -15,17 +15,25 @@ import { showOutline } from '../sidebar/sidebar-store';
 import { resetZoom, toggleWordWrap, zoomIn, zoomOut } from '../window/window-view-store';
 import { runViewCommand } from './command-bus';
 
+/** A search box or other text field the user is typing in; a view's hidden keyboard field (`data-view-keyboard`) isn't one. */
+function isTypingInField(element: Element | null): boolean {
+  const isField = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+  return isField && !element.hasAttribute('data-view-keyboard');
+}
+
 /**
  * ⌘A: the whole document in an editor (the browser's own Select All only covers the lines the editor has drawn),
- * otherwise the focused field's text or the page.
+ * the focused field's text, or everything in a formatted view (the whole tree, every CSV row).
  */
 function selectAll() {
-  const editorElement = document.activeElement?.closest('.cm-editor');
+  const focused = document.activeElement;
+  const editorElement = focused?.closest('.cm-editor');
   const view = editorElement instanceof HTMLElement ? EditorView.findFromDOM(editorElement) : null;
   if (view) {
     selectAllText(view);
     return;
   }
+  if (!isTypingInField(focused) && runViewCommand('edit.selectAll')) return;
   document.execCommand('selectAll');
 }
 

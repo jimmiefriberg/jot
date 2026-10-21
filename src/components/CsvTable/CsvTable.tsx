@@ -124,6 +124,11 @@ export function CsvTable() {
     filterInputRef.current?.select();
   }
 
+  // Every row, with the first one as the focus, so the table stays scrolled to the top.
+  function selectAllRows() {
+    if (rowCount > 0) setSelection({ kind: 'rows', anchor: rowCount - 1, focus: 0 });
+  }
+
   useViewCommands({
     'selection.moveLineUp': moveRowsUp,
     'selection.moveLineDown': moveRowsDown,
@@ -142,6 +147,7 @@ export function CsvTable() {
     'table.sortDescending': sortDescending,
     'table.filter': focusFilter,
     'edit.find': focusFilter,
+    'edit.selectAll': selectAllRows,
   });
 
   function handleAutoFit(columnIndex: number) {
@@ -360,6 +366,7 @@ export function CsvTable() {
       <textarea
         ref={sinkRef}
         className="csv-keyboard-sink"
+        data-view-keyboard
         value={selection ? SINK_PLACEHOLDER : ''}
         onChange={ignoreChange}
         onKeyDown={handleKeyDown}

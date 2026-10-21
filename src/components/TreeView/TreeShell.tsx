@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import type { ChangeEvent, ClipboardEvent, FocusEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
 
 import { useViewCommands } from '../../lib/commands/use-view-commands';
 import { revealLineInSource, revealOffsetInSource } from '../../lib/documents/reveal-in-source';
+import { getViewText } from '../../lib/editor/editor-session';
 import type { TreeParseProblem } from '../../lib/tree/tree-model';
 import { Icon } from '../Icon/Icon';
 import { useScrollToActiveMatch } from './use-tree-search';
@@ -31,6 +32,46 @@ interface TreeShellProps {
   /** The selected node's path written out for copying, like `settings.theme`; null hides the copy button. */
   selectedPathLabel: string | null;
   children: ReactNode;
+}
+
+interface WholeDocumentSelectionProps {
+  onDeselect: () => void;
+}
+
+/**
+ * While ⌘A has selected the whole document: a hidden field that keeps Copy enabled and copies the document's full text
+ * (not just the rows on screen). Clicking elsewhere or ⎋ ends the selection.
+ */
+function WholeDocumentSelection({ onDeselect }: WholeDocumentSelectionProps) {
+  function handleFocus(event: FocusEvent<HTMLTextAreaElement>) {
+    event.currentTarget.select();
+  }
+
+  function handleCopy(event: ClipboardEvent<HTMLTextAreaElement>) {
+    event.preventDefault();
+    event.clipboardData.setData('text/plain', getViewText());
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    onDeselect();
+  }
+
+  return (
+    <textarea
+      className="hidden-keyboard-field"
+      data-view-keyboard
+      value=" "
+      readOnly
+      autoFocus
+      onFocus={handleFocus}
+      onCopy={handleCopy}
+      onBlur={onDeselect}
+      onKeyDown={handleKeyDown}
+      aria-label="Whole document selected"
+    />
+  );
 }
 
 function CopyPathButton({ pathLabel }: { pathLabel: string }) {
@@ -78,6 +119,7 @@ export function TreeShell({
 }: TreeShellProps) {
   const filterInputRef = useRef<HTMLInputElement>(null);
   const treeRef = useRef<HTMLDivElement>(null);
+  const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useState(false);
   const firstProblem = problems[0];
   useScrollToActiveMatch(treeRef, filter.activeMatchPath);
 
@@ -94,7 +136,16 @@ export function TreeShell({
     filter.onGoToMatch(-1);
   }
 
+  function selectWholeDocument() {
+    setIsWholeDocumentSelected(true);
+  }
+
+  function deselectWholeDocument() {
+    setIsWholeDocumentSelected(false);
+  }
+
   useViewCommands({
+    'edit.selectAll': selectWholeDocument,
     'view.expandAll': onExpandAll,
     'view.collapseAll': onCollapseAll,
     'edit.find': focusFilter,
@@ -191,7 +242,13 @@ export function TreeShell({
           <button onClick={handleShowProblem}>Show in source</button>
         </div>
       )}
-      <div ref={treeRef} className="tree" onClick={handleClick} onDoubleClick={handleDoubleClick}>
+      {isWholeDocumentSelected && <WholeDocumentSelection onDeselect={deselectWholeDocument} />}
+      <div
+        ref={treeRef}
+        className={`tree${isWholeDocumentSelected ? ' is-whole-document-selected' : ''}`}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+      >
         {isEmpty ? <p className="empty-state">This document is empty.</p> : children}
       </div>
     </div>

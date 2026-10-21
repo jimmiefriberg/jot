@@ -549,3 +549,15 @@ kbd {
   overflow: auto;
   background: var(--color-surface);
 }
+
+/* A hidden field that receives keyboard and clipboard events for a formatted view. */
+.hidden-keyboard-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  resize: none;
+}

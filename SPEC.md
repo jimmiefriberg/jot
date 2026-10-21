@@ -126,7 +126,7 @@ Not rendered: GitHub-only references like `@user` and `#123`. A diagram Mermaid 
 - **Images:** pasting an image (a screenshot, say) saves it to an `images` folder next to the note and links it. Dropping image files on a note links them where they land (relative to the note).
 - **Outline:** *View → Show Outline* (⌥⌘O) or the status-bar list button shows the note's headings in the sidebar; click one to jump to it. The heading you're in is highlighted. Front matter is skipped.
 - ⌘B / ⌘I / ⌘K wrap the selection (or the word at the cursor) in bold, italic or a link.
-- **Select All (⌘A)** selects the whole document, however long; the system's own Select All would only take the lines drawn on screen. In a search box or other field it selects that field's text.
+- **Select All (⌘A)** selects the whole document, however long; the system's own Select All would only take the lines drawn on screen. In a JSON, YAML or XML tree it selects the whole document too (every row is highlighted, ⌘C copies the file's full text, a click or ⎋ ends it); in a CSV table it selects every row. In a search box or other field it selects that field's text.
 - **Pasting:** a URL pasted over selected text makes it a link. Cells copied from Excel, Numbers, Google Sheets or Jot's own CSV table paste as a lined-up Markdown table on lines of their own (read from the HTML table those apps put on the clipboard).
 
 ## 5. JSON (Formatted view)

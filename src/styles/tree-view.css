@@ -176,3 +176,8 @@
   margin: 0 1px;
   min-width: 4ch;
 }
+
+/* ⌘A selected the whole document: every row shows as selected. */
+.tree.is-whole-document-selected .tree-row {
+  background: var(--color-selection);
+}
