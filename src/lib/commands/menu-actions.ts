@@ -1,3 +1,6 @@
+import { selectAll as selectAllText } from '@codemirror/commands';
+import { EditorView } from '@codemirror/view';
+
 import { FILE_KIND, VIEW_MODE, hasSeparateFormattedView } from '../documents/file-kind';
 import type { FileKind } from '../documents/file-kind';
 import { revertDocument, saveDocument, saveDocumentAs } from '../documents/document-actions';
@@ -11,6 +14,20 @@ import { swapSidebarSide, toggleSetting, useSettingsStore } from '../settings/se
 import { showOutline } from '../sidebar/sidebar-store';
 import { resetZoom, toggleWordWrap, zoomIn, zoomOut } from '../window/window-view-store';
 import { runViewCommand } from './command-bus';
+
+/**
+ * ⌘A: the whole document in an editor (the browser's own Select All only covers the lines the editor has drawn),
+ * otherwise the focused field's text or the page.
+ */
+function selectAll() {
+  const editorElement = document.activeElement?.closest('.cm-editor');
+  const view = editorElement instanceof HTMLElement ? EditorView.findFromDOM(editorElement) : null;
+  if (view) {
+    selectAllText(view);
+    return;
+  }
+  document.execCommand('selectAll');
+}
 
 /** Format Document lines up Markdown tables and pretty-prints JSON; other kinds have nothing to format. */
 export function canFormatDocument(kind: FileKind): boolean {
@@ -62,6 +79,7 @@ const DOCUMENT_COMMANDS: Record<string, () => unknown> = {
   'file.quickOpen': openQuickOpen,
   'edit.undo': undoDocument,
   'edit.redo': redoDocument,
+  'edit.selectAll': selectAll,
   'view.toggleFormatted': toggleViewMode,
   'view.sideBySide': toggleSideBySide,
   'view.toggleSidebar': toggleSidebar,

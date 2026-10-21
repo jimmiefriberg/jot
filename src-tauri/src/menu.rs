@@ -157,7 +157,8 @@ pub fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .cut()
         .copy()
         .paste()
-        .select_all()
+        // Jot's own Select All: the system one only selects the lines the editor has drawn, not the whole document.
+        .item(&item("edit.selectAll", "Select All", Some("CmdOrCtrl+A"))?)
         .separator()
         .item(&item("edit.find", "Find…", Some("CmdOrCtrl+F"))?)
         .item(&item("edit.replace", "Find and Replace…", Some("CmdOrCtrl+Alt+F"))?)

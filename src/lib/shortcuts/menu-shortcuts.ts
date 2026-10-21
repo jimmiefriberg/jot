@@ -25,7 +25,6 @@ const RESERVED_SHORTCUTS: Record<string, string> = {
   'CmdOrCtrl+C': 'Copy',
   'CmdOrCtrl+V': 'Paste',
   'CmdOrCtrl+X': 'Cut',
-  'CmdOrCtrl+A': 'Select All',
   'CmdOrCtrl+H': 'Hide Jot',
   'Alt+CmdOrCtrl+H': 'Hide Others',
   'CmdOrCtrl+M': 'Minimize',

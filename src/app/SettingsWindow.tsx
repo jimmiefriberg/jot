@@ -98,6 +98,7 @@ function saveNumber(key: NumberSettingKey) {
 function handleSettingsMenuAction(actionId: string) {
   if (actionId === 'edit.undo') document.execCommand('undo');
   if (actionId === 'edit.redo') document.execCommand('redo');
+  if (actionId === 'edit.selectAll') document.execCommand('selectAll');
 }
 
 async function saveBeforeClosing(): Promise<boolean> {
